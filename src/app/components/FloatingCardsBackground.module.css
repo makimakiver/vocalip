@@ -1,0 +1,32 @@
+/* app/components/FloatingCardsBackground.module.css */
+.container {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.card {
+  position: absolute;
+  left: 0;
+  will-change: transform, opacity;
+  transform: translateX(-250px);  /* ← start off‐screen */
+  animation:
+    drift var(--anim-duration) linear infinite var(--anim-delay),
+    fade  var(--anim-duration) ease-in-out infinite var(--anim-delay);
+}
+
+
+@keyframes drift {
+  from {
+    transform: translateX(-250px);
+  }
+  to {
+    transform: translateX(calc(100vw + 250px));
+  }
+}
+
+@keyframes fade {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+}
