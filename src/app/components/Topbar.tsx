@@ -23,14 +23,14 @@ export default function Topbar() {
       }}
     >
       {/* Logo + Title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '60px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '40px' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img
             src="/logo_black.png"
             alt="logo"
-            width={50}
-            height={50}
-            style={{ borderRadius: '50%', gap: '1rem' }}
+            width={60}
+            height={60}
+            style={{ borderRadius: '50%' }}
           />
           <span
             style={{
