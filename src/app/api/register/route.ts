@@ -8,20 +8,11 @@ import { createHash } from 'crypto'
 import { IpMetadata } from '@story-protocol/core-sdk'
 
 export async function POST(request: Request) {
-    console.log(process.env.GATEWAY_URL)
-    console.log(process.env.PINATA_GATEWAY_TOKEN)
-
         // 1. Set up your IP Metadata
         //
         // Docs: https://docs.story.foundation/concepts/ip-asset/ipa-metadata-standard
     // you should already have a client set up (prerequisite
     const { imageCid, voiceCid, name, description, commercialShare, derivativeAttribution } = await request.json()
-    console.log(`https://${process.env.GATEWAY_URL}/ipfs/${imageCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`)
-    console.log(`https://${process.env.GATEWAY_URL}/ipfs/${voiceCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`)
-    console.log(name)
-    console.log(description)
-    console.log(commercialShare)
-    console.log(derivativeAttribution)
     const imageUri = `https://${process.env.GATEWAY_URL}/ipfs/${imageCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`
     const voiceUri = `https://${process.env.GATEWAY_URL}/ipfs/${voiceCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`
     const ipMetadata = {
@@ -99,5 +90,5 @@ export async function POST(request: Request) {
         'IPA ID': response.ipId,
     })
     console.log(`View on the explorer: ${networkInfo.protocolExplorer}/ipa/${response.ipId}`)
-    return NextResponse.json({ link: `${networkInfo.protocolExplorer}/ipa/${response.ipId}` })
+    return NextResponse.json({ link: `${networkInfo.protocolExplorer}/ipa/${response.ipId}`, txHash: response.txHash, ipId: response.ipId })
 }
