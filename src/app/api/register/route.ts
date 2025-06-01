@@ -12,7 +12,7 @@ export async function POST(request: Request) {
         //
         // Docs: https://docs.story.foundation/concepts/ip-asset/ipa-metadata-standard
     // you should already have a client set up (prerequisite
-    const { imageCid, voiceCid, name, description, commercialShare, derivativeAttribution } = await request.json()
+    const { imageCid, voiceCid, name, description, commercialShare, derivativeAttribution, voiceId } = await request.json()
     const imageUri = `https://${process.env.GATEWAY_URL}/ipfs/${imageCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`
     const voiceUri = `https://${process.env.GATEWAY_URL}/ipfs/${voiceCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`
     const ipMetadata = {
@@ -47,12 +47,8 @@ export async function POST(request: Request) {
             }, 
             {
                 key: 'Voice ID',
-                value: 'tAAxBOXRjFQgiLI7Xsmq',
+                value: voiceId,
             }
-            // {
-            //     key: 'Source',
-            //     value: 'Suno.com',
-            // },
         ],
     }
 

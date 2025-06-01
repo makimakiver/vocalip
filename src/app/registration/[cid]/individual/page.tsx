@@ -13,7 +13,7 @@ export default function PILTermsPage() {
   const { data: walletClient, isError, isLoading } = useWalletClient();
   const STORY_RPC_URL = 'https://aeneid.storyrpc.io';
   const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL)
-  const storyContractAddress = '0x0F79379D19E6d7CEc1622317bA69f8029e5c3889'
+  const storyContractAddress = '0x57A220322E44B7b42125d02385CC04816eDB5ec7'
   const { cid } = useParams()
   const router = useRouter()
   const [showPaymentPopup, setShowPaymentPopup] = useState(false)
@@ -77,6 +77,7 @@ export default function PILTermsPage() {
       address: storyContractAddress as `0x${string}`,
       functionName: 'registerPay',
       args: [],
+      value: ethers.parseEther("1.0")
     })
     setShowPaymentPopup(true)
     setShowLoadingPopup(false)
@@ -106,15 +107,22 @@ export default function PILTermsPage() {
         body: form
       })
       const data = await response.json()
-      
+      const cloningResponse = await fetch('/api/cloning', {
+        method: 'POST',
+        body: JSON.stringify({ voiceCid: cid })
+      })
+      const cloningData = await cloningResponse.json()
+      console.log('cloningData: ', cloningData)
       const payload = {
         imageCid: data.cid,
         voiceCid: cid,
         name: voiceName,
         description: voiceDescription,
         commercialShare: commercialShare,
-        derivativeAttribution: derivativeAttribution
+        derivativeAttribution: derivativeAttribution,
+        voiceId: cloningData.cid
       }
+      
       const registrationResponse = await fetch('/api/register', {
         method: 'POST',
         body: JSON.stringify(payload)
@@ -138,6 +146,7 @@ export default function PILTermsPage() {
         address: storyContractAddress as `0x${string}`,
         functionName: 'registerVoice',
         args: [registrationData.ipId],
+        
       })
       console.log('tx: ', tx)
       // Example: call a void function `registerVoice(address user)`
