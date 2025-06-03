@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       throw new Error(`Pinata error ${resp.status}: ${err}`);
     }
     const json = await resp.json();
-    return NextResponse.json({ cid: json.IpfsHash });
+    return NextResponse.json({ cid: json.IpfsHash, link: `https://${process.env.GATEWAY_URL}/ipfs/${json.IpfsHash}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}` });
   } catch (e: any) {
     console.error(e);
     return NextResponse.json({ error: e.message }, { status: 500 });
