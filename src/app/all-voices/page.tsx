@@ -2,16 +2,16 @@
 import { useState } from "react"
 import { ethers } from "ethers"
 import storyContractAbi from '../../../StoryContractABI.json'
+import AssetCard from "../components/AssetCard."
 
 export default function AllVoicesPage() {
   const contractAddress = "0x57A220322E44B7b42125d02385CC04816eDB5ec7"
   const STORY_RPC_URL = 'https://aeneid.storyrpc.io'
   const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL)
   const storyContract = new ethers.Contract(contractAddress, storyContractAbi, readProvider)
-
-  const [voices, setVoices] = useState([])
+  const [voices, setVoices] = useState<String[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchAllVoices = async () => {
     setLoading(true)
@@ -31,12 +31,20 @@ export default function AllVoicesPage() {
       }
       const results = await Promise.all(promises)
       setVoices(results)
+      
     } catch (error) {
-      setError("Error fetching voices: " + (error.message || error.toString()))
+      let errorMsg = "Error fetching voices: ";
+      if (error && typeof error === "object" && "message" in error) {
+        errorMsg += (error as { message: string }).message;
+      } else {
+        errorMsg += String(error);
+      }
+      setError(errorMsg);
       setVoices([])
     }
     setLoading(false)
   }
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
@@ -54,8 +62,7 @@ export default function AllVoicesPage() {
           <ul className="space-y-4">
             {voices.map((voice, i) => (
               <li key={i} className="p-4 bg-white rounded-lg shadow flex flex-col">
-                <span><b>Creator:</b> {voice[0]}</span>
-                <span><b>Asset ID:</b> {voice[1]}</span>
+                <AssetCard assetId={voice[1]} creator={voice[0]} />
               </li>
             ))}
           </ul>

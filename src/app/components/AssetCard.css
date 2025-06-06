@@ -1,0 +1,129 @@
+.asset-card {
+  display: flex;
+  background: #fff;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  border: 1px solid #f3f5f7;
+  overflow: hidden;
+  max-width: 520px;
+  min-width: 330px;
+  margin: 0 auto 2rem;
+}
+
+.asset-card.loading {
+  min-height: 160px;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  background: #f9f9fa;
+}
+
+.asset-card-image-wrapper {
+  position: relative;
+  min-width: 140px;
+  max-width: 140px;
+  height: 140px;
+  background: #f3f5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.asset-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1.2rem 0 0 1.2rem;
+}
+
+.asset-card-play-btn {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(30,40,60,0.7);
+  border: none;
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+  z-index: 1;
+}
+
+.asset-card-play-btn:hover {
+  background: rgba(30,40,60,0.85);
+}
+
+.asset-card-details {
+  flex: 1;
+  padding: 22px 24px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.asset-card-title {
+  font-size: 1.12rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #202223;
+}
+
+.asset-card-desc {
+  color: #8a8e97;
+  font-size: 0.98rem;
+  margin-bottom: 11px;
+  min-height: 1.4em;
+  word-break: break-word;
+}
+
+.asset-card-tag {
+  display: inline-block;
+  background: #e0f1ff;
+  color: #007aff;
+  font-size: 0.93em;
+  font-weight: 500;
+  border-radius: 10px;
+  padding: 2px 9px;
+  text-decoration: none;
+  margin-bottom: 8px;
+  margin-right: 4px;
+  transition: background 0.16s;
+}
+
+.asset-card-tag:hover {
+  background: #cbe4fc;
+}
+
+.asset-card-creator {
+  color: #b2b2b2;
+  font-size: 0.93em;
+  margin-top: 7px;
+  margin-bottom: 2px;
+}
+
+.asset-card-creator span {
+  color: #4d4d6a;
+  font-family: monospace;
+  font-size: 1em;
+}
+
+@media (max-width: 600px) {
+  .asset-card {
+    flex-direction: column;
+    min-width: 0;
+  }
+  .asset-card-image-wrapper {
+    max-width: 100%;
+    border-radius: 1.2rem 1.2rem 0 0;
+    height: 160px;
+  }
+  .asset-card-details {
+    padding: 18px 14px 14px 14px;
+  }
+}
