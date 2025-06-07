@@ -329,7 +329,10 @@ async function startRecording() {
                 </motion.button>
 
                 <motion.button
-                  onClick={() => startRecording()}
+                  onClick={() => {
+                    setShowModal(false);
+                    startRecording();
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

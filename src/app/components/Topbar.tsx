@@ -7,6 +7,7 @@ import { ConnectButton } from '@tomo-inc/tomo-evm-kit'
 export default function Topbar() {
   const links = [
     { label: 'Home', href: '/' },
+    { label: 'Lists', href: '/all-voices' },
     { label: 'Record', href: '/record' },
     { label: 'My Voices', href: '/my-voices' },
     { label: 'About', href: 'https://spiny-elderberry-76f.notion.site/Voice-as-an-IP-assets-1fd1ff50043d8013bdeec147323122a9?pvs=74' },

@@ -112,8 +112,8 @@ export default function PILTermsPage() {
         body: JSON.stringify({ voiceCid: cid })
       })
       const cloningData = await cloningResponse.json()
-      console.log('cloningData: ', cloningData)
       const payload = {
+        creator_address: walletClient?.account,
         imageCid: data.cid,
         voiceCid: cid,
         name: voiceName,
@@ -122,7 +122,6 @@ export default function PILTermsPage() {
         derivativeAttribution: derivativeAttribution,
         voiceId: cloningData.cid
       }
-      
       const registrationResponse = await fetch('/api/register', {
         method: 'POST',
         body: JSON.stringify(payload)

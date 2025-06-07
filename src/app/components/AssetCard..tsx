@@ -2,11 +2,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./AssetCard.css"
 import { client } from "../../../utils/config";
-
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, MessageSquareWarning, SquareArrowOutUpRight, X } from 'lucide-react';
 type AssetCardProps = {
   assetId: string;
   creator: string;
 };
+
 
 export default function AssetCard({ assetId, creator }: AssetCardProps) {
   type AssetDataType = {
@@ -16,7 +19,7 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
     };
     [key: string]: any;
   };
-
+  
   type MetaDataType = {
     image?: string;
     mediaUrl?: string;
@@ -25,12 +28,32 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
     creators?: { address?: string }[];
     [key: string]: any;
   };
+  
+  enum DisputeType {
+    None = "NONE",
+    ImproperRegistration = "IMPROPER_REGISTRATION",
+    ImproperUsage = "IMPROPER_USAGE",
+    ImproperPayment = "IMPROPER_PAYMENT",
+    ContentStandardsViolation = "CONTENT_STANDARDS_VIOLATION",
+  }
 
   const [assetData, setAssetData] = useState<AssetDataType | null>(null);
   const [metaData, setMetaData] = useState<MetaDataType | null>(null);
   const [loading, setLoading] = useState(true);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [showOptions, setShowOptions] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeType, setDisputeType] = useState<DisputeType>(DisputeType.None);
+  const [disputeButton, setDisputeButton] = useState(false);
+
+  useEffect(() => {
+    if (disputeType !== DisputeType.None) {
+      setDisputeButton(true);
+    } else {
+      setDisputeButton(false);
+    }
+  }, [disputeType]);
 
   useEffect(() => {
     const fetchAsset = async () => {
@@ -98,7 +121,21 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
     return <div className="asset-card loading">Loading asset...</div>;
   }
 
+  const raiseDispute = async () => {
+    if (disputeType === DisputeType.None) {
+      alert("Please select a dispute type");
+      return;
+    }
+    const res = await fetch("/api/raise-dispute", {
+      method: "POST",
+      body: JSON.stringify({ ipId: assetId, disputeType: disputeType }),
+    });
+    const json = await res.json();
+    console.log(json);
+    setShowDisputeModal(false);
+    alert("Dispute Raised! Tx Hash: " + json.txHash);
 
+  }
 
    const mintLicenseToken = async () => {
     
@@ -185,6 +222,296 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
         </button>
 
       </div>
+      <BsThreeDotsVertical className="asset-card-dots" onClick={() => setShowOptions(!showOptions)}/>
+    <AnimatePresence>
+    {showOptions && !showDisputeModal && (
+      <motion.div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 10,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          style={{
+            width: '90%',
+            maxWidth: '400px',
+            backgroundColor: '#fff',
+            borderRadius: '24px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between'
+          }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div
+              onClick={() => window.open(`https://aeneid.explorer.story.foundation/ipa/${assetId}`, '_blank')}
+              style={{
+                padding: '10px',
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: '#007bff',
+                color: '#fff',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}
+            >
+              View Details
+              <SquareArrowOutUpRight />
+            </div>
+            <div
+              onClick={() => {
+                setShowOptions(false);
+                setShowDisputeModal(true);
+              }}
+              style={{
+                padding: '10px',
+                borderRadius: '12px',
+                border: 'none',
+                color: '#fff',
+                backgroundColor: '#dc3545',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}
+            >
+              Raise Dispute
+              <MessageSquareWarning />
+            </div>
+          </div>
+          <X onClick={() => setShowOptions(false)}/>
+        </motion.div>
+      </motion.div>
+    )}
+    </AnimatePresence>
+    <AnimatePresence>
+    {showDisputeModal && !showOptions && (
+      <motion.div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: 10,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+        <motion.div
+          style={{
+            width: '90%',
+            maxWidth: '60vw',
+            backgroundColor: '#fff',
+            borderRadius: '24px',
+            padding: '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            position: 'relative',
+          }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <ArrowLeft className="asset-card-close" onClick={() => {
+              setShowDisputeModal(false);
+              setShowOptions(true);
+            }}/>
+            <h2>Raise Dispute</h2>
+            <X className="asset-card-close" onClick={() => setShowDisputeModal(false)}/>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'row', gap: '12px', margin: '12px'}}>
+            <div
+              style={{
+                border: '1px solid #e0e0e0',
+                borderRadius: '16px',
+                width: '50%',
+                padding: '20px',
+                background: disputeType === DisputeType.ImproperRegistration
+                  ? 'linear-gradient(145deg, #d0f0ff, #aee6ff)'
+                  : 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+                boxShadow: disputeType === DisputeType.ImproperRegistration
+                  ? '0 10px 24px rgba(0, 100, 200, 0.2)'
+                  : '0 6px 16px rgba(0, 0, 0, 0.05)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.05)';
+              }}
+              onClick={() => setDisputeType(DisputeType.ImproperRegistration)}
+            >
+              <h3 style={{ marginBottom: '10px', fontSize: '1.2rem', fontWeight: '600', color: '#333' }}>
+                🔒 Improper Registration
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#555' }}>
+                The content has been used or published without the creator’s permission or outside agreed terms.
+              </p>
+            </div>
+            <div
+              style={{
+                border: '1px solid #e0e0e0',
+                borderRadius: '16px',
+                width: '50%',
+                padding: '20px',
+                background: disputeType === DisputeType.ImproperUsage
+                  ? 'linear-gradient(145deg, #d0f0ff, #aee6ff)'
+                  : 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+                boxShadow: disputeType === DisputeType.ImproperUsage
+                  ? '0 10px 24px rgba(0, 100, 200, 0.2)'
+                  : '0 6px 16px rgba(0, 0, 0, 0.05)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.05)';
+              }}
+              onClick={() => setDisputeType(DisputeType.ImproperUsage)}
+            >
+              <h3 style={{ marginBottom: '10px', fontSize: '1.2rem', fontWeight: '600', color: '#333' }}>
+                🔒 Improper Usage
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#555' }}>
+                the voice is not used properly. 
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'row', margin: '12px', gap: '12px' }}>
+            <div
+              style={{
+                border: '1px solid #e0e0e0',
+                borderRadius: '16px',
+                width: '50%',
+                padding: '20px',
+                background: disputeType === DisputeType.ImproperPayment
+                  ? 'linear-gradient(145deg, #d0f0ff, #aee6ff)'
+                  : 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+                boxShadow: disputeType === DisputeType.ImproperPayment
+                  ? '0 10px 24px rgba(0, 100, 200, 0.2)'
+                  : '0 6px 16px rgba(0, 0, 0, 0.05)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.05)';
+              }}
+              onClick={() => setDisputeType(DisputeType.ImproperPayment)}
+            >
+              <h3 style={{ marginBottom: '10px', fontSize: '1.2rem', fontWeight: '600', color: '#333' }}>
+                🔒 Improper Payment
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#555' }}>
+                The content has been used or published without the creator’s permission or outside agreed terms.
+              </p>
+            </div>
+            <div
+              style={{
+                border: '1px solid #e0e0e0',
+                borderRadius: '16px',
+                width: '50%',
+                padding: '20px',
+                background: disputeType === DisputeType.ContentStandardsViolation
+                  ? 'linear-gradient(145deg, #d0f0ff, #aee6ff)'
+                  : 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+                boxShadow: disputeType === DisputeType.ContentStandardsViolation
+                  ? '0 10px 24px rgba(0, 100, 200, 0.2)'
+                  : '0 6px 16px rgba(0, 0, 0, 0.05)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.05)';
+              }}
+              onClick={() => setDisputeType(DisputeType.ContentStandardsViolation)}
+            >
+              <h3 style={{ marginBottom: '10px', fontSize: '1.2rem', fontWeight: '600', color: '#333' }}>
+                🔒 Content Standards Violation
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#555' }}>
+                The content has been used or published without the creator’s permission or outside agreed terms.
+              </p>
+            </div>
+          </div>
+          {disputeButton && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              `<button
+                onClick={raiseDispute}
+                disabled={!disputeButton}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: disputeButton ? '#0070f3' : '#ccc',
+                  color: disputeButton ? '#fff' : '#666',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: disputeButton ? 'pointer' : 'not-allowed',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  transition: 'background-color 0.3s ease, transform 0.2s ease',
+                  marginTop: '12px',
+                }}
+                onMouseEnter={(e) => {
+                  if (disputeButton) e.currentTarget.style.backgroundColor = '#005ad1';
+                }}
+                onMouseLeave={(e) => {
+                  if (disputeButton) e.currentTarget.style.backgroundColor = '#0070f3';
+                }}
+              >
+                Raise Dispute
+              </button>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    )}
+    </AnimatePresence>
     </div>
   );
 }

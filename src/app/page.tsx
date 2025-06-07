@@ -8,7 +8,7 @@ import FloatingCardsBackground from './components/FloatingCardsBackground';
 
 export default function HomePage() {
   return (
-    <div style={{ fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
+    <div style={{ fontFamily: 'sans-serif', margin: 0, padding: 0, minHeight: '100vh' }}>
       <FloatingCardsBackground />
       <main style={{ padding: '2rem 1rem', maxWidth: 800, margin: '0 auto' }}>
         {/* Hero Section */}
@@ -20,21 +20,6 @@ export default function HomePage() {
             <p style={{ fontSize: '1.125rem', color: '#555', marginBottom: '2rem' }}>
               Register your unique voice as an NFT, license it for commercial use, and earn revenue automatically.
             </p>
-            <Link href="/record">
-              <button
-                style={{
-                  backgroundColor: '#0070f3',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '4px',
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                }}
-              >
-                Get Started
-  n          </button>
-            </Link>
           </section>
 
           {/* Features Section */}
@@ -76,27 +61,22 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-
-          {/* Quick Links */}
-          <section style={{ marginTop: '3rem', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Quick Links</h2>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-              <Link href="/record">
-                <button style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #0070f3', background: '#fff', cursor: 'pointer' }}>
-                  Record Voice
-                </button>
-              </Link>
-              <Link href="/mint">
-                <button style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #0070f3', background: '#fff', cursor: 'pointer' }}>
-                  Mint NFT
-                </button>
-              </Link>
-              <Link href="/my-voices">
-                <button style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #0070f3', background: '#fff', cursor: 'pointer' }}>
-                  My Voices
-                </button>
-              </Link>
-            </div>
+          <section style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+            <Link href="/record">
+              <button
+                style={{
+                  backgroundColor: '#0070f3',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '4px',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Register Voice!!
+              </button>
+            </Link>
           </section>
         </div>
       </main>
