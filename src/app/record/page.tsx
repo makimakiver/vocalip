@@ -24,16 +24,30 @@ export default function VoiceRecorder() {
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [isDragging, setDragging] = useState(false);
-  const [onFiles, setOnFiles] = useState<File[] | null>(null);
+  const [onFiles, setOnFiles] = useState<File[]>([]);
+  const [fileUploaded, setFileUploaded] = useState(false);
     /**
    * Convert any Blob (e.g. from MediaRecorder) into a base64 string
    */
   const triggerFileSelect = () => fileInputRef.current?.click()
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setOnFiles(file)
-      setVoiceURL(URL.createObjectURL(file))
+  const removeFile = () => {
+    setOnFiles(prev => {
+      const newFiles = prev.slice(0, -1);
+      console.log('NewFiles', newFiles);
+      return newFiles;
+    });
+  };
+    // 2) sync fileUploaded whenever onFiles changes
+  useEffect(() => {
+    console.log('onFiles changed:', onFiles)  // now you'll see the updated array
+    setFileUploaded(onFiles.length > 0)
+  }, [onFiles])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setOnFiles(prev => [...prev, ...files]);
+      setFileUploaded(true);
     }
   }
 
@@ -75,7 +89,30 @@ export default function VoiceRecorder() {
       setRecordingTime((t) => t + 1)
     }, 1000)
   }
-
+  const handleNext = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const file = onFiles[0];
+    console.log('File', file);
+    if (file) {
+      const form = new FormData();
+      form.append('file', file, file.name);
+      const res = await fetch('/api/recording', {
+        method: 'POST',
+        headers: { 'Content-Type': 'multipart/form-data' },
+        body: form,
+      });
+      const cid = await res.json();
+      console.log('CID', cid.cid);
+      setCurrentCid(cid.cid);
+      setShowModal(true);
+      setPassed(true);
+      return;
+    }
+    setPassed(false);
+    setShowModal(true);
+    setOnFiles([]);
+    return;
+  }
   const stopRecording = async () => {
     // stop your MediaRecorder…
     console.log('Timer', timerRef.current);
@@ -211,7 +248,7 @@ export default function VoiceRecorder() {
       style={{
         border: '2px dashed #cbd5e0',
         borderRadius: '12px',
-        padding: '32px',
+        padding: !armed && fileUploaded && onFiles ? '0px' : '32px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -220,12 +257,11 @@ export default function VoiceRecorder() {
         marginBottom: '16px',
         minWidth: '600px',
         height: '200px',
-        position: 'relative',
       }}
     >
-      { !armed ? (
+      { !armed && !fileUploaded ? (
         <>
-          <UploadCloud size={48} style={{ color: '#a0aec0', marginBottom: '12px' }} />
+          <UploadCloud size={30} style={{ color: '#a0aec0', marginBottom: '12px' }} />
           <p style={{ margin: 0, color: '#4a5568' }}>
             Click to upload, or drag and drop
           </p>
@@ -238,12 +274,99 @@ export default function VoiceRecorder() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="audio/*"
+            multiple
+            accept="audio/mpeg, audio/wav, audio/mp3"
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />  
         </>
-      ) : !recording ? (
+      ) : !armed && fileUploaded && onFiles ? (
+        <div
+        style={{
+          padding: '16px',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {/* Back button sits at the left of the cell */}
+        <div style={{ display: 'flex', flexDirection: 'row', textAlign: 'left', width: '100%', justifyContent: 'flex-start', alignItems: 'flex-start', borderRadius: '12px' }}>
+          <motion.button
+            onClick={() => {
+              setOnFiles([]);
+              setFileUploaded(false);
+            }}
+            whileHover={{ scale: 1.05 }}
+            style={{
+              gridColumn: 1,
+              gridRow: 1,
+              justifySelf: 'start',    // left-align
+              background: 'transparent',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              color: '#4A5568',
+              fontSize: '0.875rem',
+            }}
+          >
+            <ArrowLeft size={20} /> Back
+          </motion.button>
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', width: '100%', justifyContent: 'center', alignItems: 'center', padding: '12px', borderRadius: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, color: '#2d3748' }}>
+              Selected Files
+            </h3>
+            <p style={{ margin: '4px 0 12px', fontSize: '0.875rem', color: '#718096' }}>
+              Click the × to remove any file
+            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', width: '40%', justifyContent: 'center', alignItems: 'center', padding: '12px', borderRadius: '12px'}}>
+      
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                maxHeight: '140px',
+                overflowY: 'auto',
+              }}
+            >
+              {onFiles.map((f, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '8px 12px',
+                    backgroundColor: '#EDF2F7',
+                    borderRadius: '12px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#2d3748' }}>
+                      {f.name}
+                    </span>
+                    <span style={{ marginLeft: '4px', fontSize: '0.75rem', color: '#718096' }}>
+                      ({(f.size / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+                  </div>
+                  <X
+                    size={16}
+                    style={{ cursor: 'pointer', color: '#A0AEC0' }}
+                    onClick={() => removeFile()}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          </div>
+        </div>
+      
+        </div>
+      ) : recording ? (
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
           <ArrowLeft size={24} style={{ color: '#a0aec0', marginBottom: '12px', cursor: 'pointer' }} onClick={() => setArmed(false)} />
           <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>Uploading files?</div>
@@ -254,47 +377,50 @@ export default function VoiceRecorder() {
           <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>{recordingTime} seconds</div>
         </div>
       )}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!armed) {
-            setArmed(true);
-            return;
-          }
-          if (recording) {
-            stopRecording();
-          } else {
-            startRecording();
-          }
-        }}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          padding: '10px 20px',
-          backgroundColor: recording ? '#e53e3e' : '#38a169',
-          color: '#fff',
-          borderRadius: '24px',
-          border: 'none',
-          cursor: 'pointer',
-          outline: 'none',
-          fontWeight: 600,
-          marginTop: 'auto',
-        }}
-      >
-      { !armed
-        ? <>
-            Record audio
-            <Microphone style={{ marginLeft: '8px' }} />
+      {
+       !fileUploaded && !recording && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!armed) {
+              setArmed(true);
+              return;
+            }
+            if (recording) {
+              stopRecording();
+            } else {
+              startRecording();
+            }
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '10px 20px',
+            backgroundColor: recording ? '#e53e3e' : '#38a169',
+            color: '#fff',
+            borderRadius: '24px',
+            border: 'none',
+            cursor: 'pointer',
+            outline: 'none',
+            fontWeight: 600,
+            marginTop: 'auto',
+          }}
+        >
+        { !armed
+          ? <>
+              Record audio
+              <Microphone style={{ marginLeft: '8px' }} />
+            </>
+          : recording
+          ? <>
+            <StopCircle size={24} style={{ marginLeft: '8px' }} />
           </>
-        : recording
-        ? <>
-          <StopCircle size={24} style={{ marginLeft: '8px' }} />
-        </>
-        : <>
-          <Play size={24} style={{ marginLeft: '8px' }} />
-          </>
-      }
-      </button>
+          : <>
+            <Play size={24} style={{ marginLeft: '8px' }} />
+            </>
+        }
+        </button>
+      )}
     </div>
 
     {/* Footer Controls */}
@@ -305,20 +431,22 @@ export default function VoiceRecorder() {
       </label>
     </div>
     <button
-      disabled
+      onClick={(e) => handleNext(e)}
+      disabled={onFiles.length === 0}          // see note below
       style={{
-        width: '120px',
-        padding: '12px',
-        backgroundColor: '#cbd5e0',
-        color: '#718096',
+        padding: '12px 24px',        // horizontal padding makes the button wide enough
+        backgroundColor: onFiles.length != 0 ? '#3182ce' : '#cbd5e0',
+        color: onFiles.length != 0 ? '#fff' : '#718096',
         borderRadius: '24px',
         fontWeight: 600,
         border: 'none',
-        cursor: 'not-allowed',
+        cursor: onFiles.length != 0 ? 'pointer' : 'not-allowed',
+        transition: 'background-color 0.2s',
       }}
     >
       Next
     </button>
+
 
     {/* <div
       style={{
@@ -371,7 +499,7 @@ export default function VoiceRecorder() {
               <X
                 onClick={() => setShowModal(false)}
                 size={24}
-                style={{ cursor: 'pointer', color: '#a0aec0', position: 'absolute', top: '16px', right: '16px' }}
+                style={{ cursor: 'pointer', color: '#a0aec0', top: '16px', right: '16px', position: 'absolute' }}
               />
               {passed ? (
                 <CheckCircle size={48} style={{ color: '#38a169' }} />
