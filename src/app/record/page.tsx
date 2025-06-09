@@ -2,46 +2,48 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Building2, Mic, X } from 'lucide-react';
-
+import { User, Building2, UploadCloud, X, CheckCircle, AlertCircle, Mic as Microphone, Play, StopCircle, ArrowLeft } from 'lucide-react';
+import * as Select from '@radix-ui/react-select';
+import SelectDemo from '../components/Select';
 
 export default function VoiceRecorder() {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0)
   const [recording, setRecording] = useState(false);
   const [passed, setPassed] = useState(false);
   const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  const [armed, setArmed] = useState(false);
   const [currentCid, setCurrentCid] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const recorderRef = useRef<MediaRecorder>();
   const chunksRef = useRef<BlobPart[]>([]);
   const audioContextRef = useRef<AudioContext>();
   const router = useRouter();
-  const [targetText, setTargetText] = useState<string | null>(null);
+  const fileInputRef = useRef(null);
+  const [isDragging, setDragging] = useState(false);
+  const [onFiles, setOnFiles] = useState<File[] | null>(null);
     /**
    * Convert any Blob (e.g. from MediaRecorder) into a base64 string
    */
-  function blobToBase64(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => {
-        reader.abort();
-        reject(new Error('Problem reading blob as base64.'));
-      };
-      reader.onload = () => {
-        // reader.result is something like "data:<mime>;base64,AAAA..."
-        const dataUrl = reader.result as string;
-        // strip off "data:*/*;base64," prefix to get just the raw base64
-        const base64 = dataUrl.split(',', 2)[1];
-        resolve(base64);
-      };
-      reader.readAsDataURL(blob);
-    });
+  const triggerFileSelect = () => fileInputRef.current?.click()
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setOnFiles(file)
+      setVoiceURL(URL.createObjectURL(file))
+    }
   }
 
-// in your startRecording()
-async function startRecording() {
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [])
+
+  async function startRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         sampleRate:       { ideal: 48000 },
@@ -64,13 +66,31 @@ async function startRecording() {
     mr.ondataavailable = e => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
-    setTargetText("Ladies and gentlemen, today I want to address the recent breach of Cetus Protocol, a prominent decentralized exchange on the Sui blockchain. On May 22nd, attackers exploited an integer overflow vulnerability in Cetus’s liquidity calculation, draining over two hundred million dollars from its pools in under fifteen minutes. Although the protocol team and Sui validators swiftly intervened—freezing a large portion of the stolen assets—this remains one of the largest heists in DeFi this year. The attacker leveraged a flash loan and manipulated a narrow tick range to deceive the reserve formulas, effectively siphoning liquidity intended for everyday users. In response, Cetus rapidly paused its smart contracts, offered a substantial whitehat bounty for the return of any remaining funds, and is working hand in hand with the Sui Foundation to reimburse those affected. This incident is a clarion call for our entire industry: every protocol must undergo meticulous security audits, implement rigorous overflow checks, and prepare robust emergency measures. By learning from this breach and sharing best practices, we can reinforce the foundation of decentralized finance and ensure that trust, transparency, and resilience remain its guiding principles.");
     // emit new dataavailable every 200ms for smoother real-time streaming
     mr.start(200);
     setRecording(true);
+    // reset & start counting
+    setRecordingTime(0)
+    timerRef.current = setInterval(() => {
+      setRecordingTime((t) => t + 1)
+    }, 1000)
   }
 
   const stopRecording = async () => {
+    // stop your MediaRecorder…
+    console.log('Timer', timerRef.current);
+    const timer: number = timerRef.current as unknown as number;
+    if (timer && timer < 30000) {
+      console.log('Timer is less than 30 seconds');
+      setRecording(false);
+      setPassed(false);
+      setShowModal(true);
+      return;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
     if (!recorderRef.current) return;
     console.log('Stopping recording');
     // stop & wait for final dataavailable
@@ -79,7 +99,6 @@ async function startRecording() {
       const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
       const form = new FormData();
       form.append('file', blob, 'recording.webm');
-
       const res = await fetch('/api/recording', {
         method: 'POST',
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -88,18 +107,19 @@ async function startRecording() {
       const cid = await res.json();
       console.log('CID', cid.cid);
       setCurrentCid(cid.cid);
-      const res2 = await fetch('/api/humanValidation', {
-        method: 'POST',
-        body: JSON.stringify({ voiceCid: cid.cid, text: targetText }),
-      });
-      const text = await res2.json();
-      console.log('Text', text.text);
-      console.log('Similarity', text.similarity_score);
-      if (text.similarity_score > 0.8) {
-        setPassed(true);
-      } else {
-        setPassed(false);
-      }
+
+      // const res2 = await fetch('/api/humanValidation', {
+      //   method: 'POST',
+      //   body: JSON.stringify({ voiceCid: cid.cid }),
+      // });
+      // const text = await res2.json();
+      // console.log('Text', text.text);
+      // console.log('Similarity', text.similarity_score);
+      // if (text.similarity_score > 0.8) {
+      //   setPassed(true);
+      // } else {
+      //   setPassed(false);
+      // }
       // 5) decode to AudioBuffer (PCM)
       if (!audioContextRef.current) {
         audioContextRef.current = new AudioContext();
@@ -125,235 +145,319 @@ async function startRecording() {
     router.push(`/registration/${currentCid}/${type}`);
   };
   return (
-    <div style={{
+    <div
+    style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column'
-    }}>
-      {targetText && (
-        <div
-          style={{
-            maxWidth: '600px',
-            backgroundColor: '#f7fafc',
-            borderRadius: '8px',
-            padding: '16px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-            color: '#2d3748',
-            lineHeight: 1.5,
-          }}
-        >
-          {targetText}
+      flexDirection: 'column',
+    }}
+  >
+    {/* Header */}
+    <div style={{ height: '100px', display: 'flex', flexDirection: 'row', alignItems: 'center', marginTop: '8vh'}}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>
+          Instant Voice Clone
+        </h2>
+      </div>
+    </div>
+    {/* Instruction Panel */}
+    <div style={{ display: 'flex', gap: '32px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+        <AlertCircle style={{ color: '#4a5568', marginTop: '4px' }} />
+        <div>
+          <h4 style={{ margin: 0, fontWeight: 500, color: '#2d3748' }}>
+            Avoid noisy environments
+          </h4>
+          <p style={{ margin: '4px 0 0', color: '#718096', fontSize: '0.875rem' }}>
+            Background sounds interfere with recording quality.
+          </p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+        <CheckCircle style={{ color: '#4a5568', marginTop: '4px' }} />
+        <div>
+          <h4 style={{ margin: 0, fontWeight: 500, color: '#2d3748' }}>
+            Check microphone quality
+          </h4>
+          <p style={{ margin: '4px 0 0', color: '#718096', fontSize: '0.875rem' }}>
+            Use external or headphone mics for better capture.
+          </p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+        <Microphone style={{ color: '#4a5568', marginTop: '4px' }} />
+        <div>
+          <h4 style={{ margin: 0, fontWeight: 500, color: '#2d3748' }}>
+            Use consistent equipment
+          </h4>
+          <p style={{ margin: '4px 0 0', color: '#718096', fontSize: '0.875rem' }}>
+            Don’t change equipment between samples.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div style={{ display: 'flex', gap: '32px', marginBottom: '24px', justifyContent: 'center', width: '100%', marginLeft: '40vw'}}>
+      <SelectDemo />
+    </div>
+    {/* Upload / Record Section */}
+    <div
+      onClick={() => {
+        if (armed) {
+          return;
+        }
+        triggerFileSelect();
+      }}
+      style={{
+        border: '2px dashed #cbd5e0',
+        borderRadius: '12px',
+        padding: '32px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        backgroundColor: '#fff',
+        marginBottom: '16px',
+        minWidth: '600px',
+        height: '200px',
+        position: 'relative',
+      }}
+    >
+      { !armed ? (
+        <>
+          <UploadCloud size={48} style={{ color: '#a0aec0', marginBottom: '12px' }} />
+          <p style={{ margin: 0, color: '#4a5568' }}>
+            Click to upload, or drag and drop
+          </p>
+          <p style={{ margin: '4px 0 16px', color: '#a0aec0', fontSize: '0.875rem' }}>
+            Audio or video, up to 10MB each
+          </p>
+          <span style={{ color: '#a0aec0', fontSize: '0.875rem', marginBottom: '16px' }}>
+            or
+          </span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />  
+        </>
+      ) : !recording ? (
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          <ArrowLeft size={24} style={{ color: '#a0aec0', marginBottom: '12px', cursor: 'pointer' }} onClick={() => setArmed(false)} />
+          <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>Uploading files?</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>Recording...</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>{recordingTime} seconds</div>
         </div>
       )}
-      <motion.button
-        onClick={recording ? stopRecording : startRecording}
-        style={{
-          padding: '12px 24px',
-          borderRadius: '24px',
-          fontWeight: 600,
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          color: '#fff',
-          cursor: 'pointer',
-          border: 'none',
-          outline: 'none',
-          backgroundColor: recording ? '#e53e3e' : '#38a169'
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!armed) {
+            setArmed(true);
+            return;
+          }
+          if (recording) {
+            stopRecording();
+          } else {
+            startRecording();
+          }
         }}
-        whileTap={{ scale: 0.95 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '10px 20px',
+          backgroundColor: recording ? '#e53e3e' : '#38a169',
+          color: '#fff',
+          borderRadius: '24px',
+          border: 'none',
+          cursor: 'pointer',
+          outline: 'none',
+          fontWeight: 600,
+          marginTop: 'auto',
+        }}
       >
-        {recording ? 'Stop Recording' : 'Start Recording'}
-      </motion.button>
+      { !armed
+        ? <>
+            Record audio
+            <Microphone style={{ marginLeft: '8px' }} />
+          </>
+        : recording
+        ? <>
+          <StopCircle size={24} style={{ marginLeft: '8px' }} />
+        </>
+        : <>
+          <Play size={24} style={{ marginLeft: '8px' }} />
+          </>
+      }
+      </button>
+    </div>
 
-      <AnimatePresence>
-        {showModal && passed && (
+    {/* Footer Controls */}
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+      <input type="checkbox" id="tenSec" style={{ marginRight: '8px' }} />
+      <label htmlFor="tenSec" style={{ color: '#4a5568', fontSize: '0.875rem' }}>
+        10 seconds of audio required
+      </label>
+    </div>
+    <button
+      disabled
+      style={{
+        width: '120px',
+        padding: '12px',
+        backgroundColor: '#cbd5e0',
+        color: '#718096',
+        borderRadius: '24px',
+        fontWeight: 600,
+        border: 'none',
+        cursor: 'not-allowed',
+      }}
+    >
+      Next
+    </button>
+
+    {/* <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        background: 'linear-gradient(135deg, #e2e8f0, #f9fafb)',
+        padding: '24px',
+      }}
+    > */}
+
+    {/* Modal */}
+    <AnimatePresence>
+      {showModal && (
+        <motion.div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
           <motion.div
             style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'rgba(0,0,0,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              width: '90%',
+              maxWidth: '400px',
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              padding: '32px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              textAlign: 'center',
             }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
-            <motion.div
-              style={{
-                width: '90%',
-                maxWidth: '400px',
-                backgroundColor: '#fff',
-                borderRadius: '24px',
-                padding: '24px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-              }}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            >
-              <h2 style={{
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#2d3748',
-                marginBottom: '16px'
-              }}>
-                <User style={{ marginRight: '8px' }} size={24} />
-                Select Registration Type
-              </h2>
-              <p style={{
-                color: '#4a5568',
-                marginBottom: '24px'
-              }}>
-                Your recording is saved! Choose how you'd like to register:
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <motion.button
-                  onClick={() => handleSelection('individual')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '10px 20px',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    cursor: 'pointer',
-                    border: 'none',
-                    outline: 'none',
-                    color: '#fff',
-                    backgroundColor: '#3182ce'
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <User style={{ marginRight: '8px' }} size={20} /> Individual
-                </motion.button>
+            <div style={{ marginBottom: '16px' }}>
+              <X
+                onClick={() => setShowModal(false)}
+                size={24}
+                style={{ cursor: 'pointer', color: '#a0aec0', position: 'absolute', top: '16px', right: '16px' }}
+              />
+              {passed ? (
+                <CheckCircle size={48} style={{ color: '#38a169' }} />
+              ) : (
+                <AlertCircle size={48} style={{ color: '#e53e3e' }} />
+              )}
+            </div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '12px' }}>
+              {passed ? 'Select Registration Type' : 'Invalid Recording'}
+            </h2>
+            <p style={{ color: '#4a5568', marginBottom: '24px' }}>
+              {passed
+                ? "Your recording is saved! Choose how you'd like to register:"  
+                : 'Invalid recording. Please try again.'}
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              {passed ? (
+                <>  
+                  <motion.button
+                    onClick={() => handleSelection('individual')}
+                    whileHover={{ scale: 1.05 }}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '12px 0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      border: 'none',
+                      outline: 'none',
+                      color: '#fff',
+                      backgroundColor: '#3182ce',
+                    }}
+                  >
+                    <Microphone style={{ marginRight: '8px' }} /> Individual
+                  </motion.button>
 
-                <motion.button
-                  onClick={() => handleSelection('company')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '10px 20px',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    cursor: 'pointer',
-                    border: 'none',
-                    outline: 'none',
-                    color: '#fff',
-                    backgroundColor: '#2f855a'
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Building2 style={{ marginRight: '8px' }} size={20} /> Company
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showModal && !passed && (
-          <motion.div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'rgba(0,0,0,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              style={{
-                width: '90%',
-                maxWidth: '400px',
-                backgroundColor: '#fff',
-                borderRadius: '24px',
-                padding: '24px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-              }}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            >
-              <h2 style={{
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#2d3748',
-                marginBottom: '16px'
-              }}>
-                <User style={{ marginRight: '8px' }} size={24} />
-                Invalid Recording
-              </h2>
-              <p style={{
-                color: '#4a5568',
-                marginBottom: '24px'
-              }}>
-                Invalid recording. Please try again.
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <motion.button
-                  onClick={() => router.push('/')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '10px 20px',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    cursor: 'pointer',
-                    border: 'none',
-                    outline: 'none',
-                    color: '#fff',
-                    backgroundColor: '#e53e3e'
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <X style={{ marginRight: '8px' }} size={20} /> cancel
-                </motion.button>
-
+                  <motion.button
+                    onClick={() => handleSelection('company')}
+                    whileHover={{ scale: 1.05 }}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '12px 0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      border: 'none',
+                      outline: 'none',
+                      color: '#fff',
+                      backgroundColor: '#2f855a',
+                    }}
+                  >
+                    <Microphone style={{ marginRight: '8px' }} /> Company
+                  </motion.button>
+                </>
+              ) : (
                 <motion.button
                   onClick={() => {
                     setShowModal(false);
                     startRecording();
                   }}
+                  whileHover={{ scale: 1.05 }}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '10px 20px',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                     cursor: 'pointer',
                     border: 'none',
                     outline: 'none',
                     color: '#fff',
-                    backgroundColor: '#2f855a'
+                    backgroundColor: '#2f855a',
                   }}
-                  whileHover={{ scale: 1.05 }}
                 >
-                  <Mic style={{ marginRight: '8px' }} size={20} /> Try Again
+                  Try Again
                 </motion.button>
-              </div>
-            </motion.div>
+              )}
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
   );
 }

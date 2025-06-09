@@ -9,7 +9,7 @@ import OpenAI from 'openai';
 export async function POST(request: Request) {
     try {
         const elevenlabs = new ElevenLabsClient();
-        const { voiceCid, text } = await request.json();
+        const { voiceCid } = await request.json();
       
         const url = `https://${process.env.GATEWAY_URL}/ipfs/${voiceCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`
         console.log(url);
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
 function similarity(inputText: string, compareText: string) {
     const inputWords = inputText.split(' ')
     const compareWords = compareText.split(' ')
+    console.log(inputWords, compareWords)
     const similarity = inputWords.filter(word => compareWords.includes(word)).length / inputWords.length
     return similarity
 }
