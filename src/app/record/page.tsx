@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Building2, UploadCloud, X, CheckCircle, AlertCircle, Mic as Microphone, Play, StopCircle, ArrowLeft } from 'lucide-react';
+import { User, Building2, UploadCloud, X, CheckCircle, AlertCircle, Mic as Microphone, Play, StopCircle, ArrowLeft, Space } from 'lucide-react';
 import * as Select from '@radix-ui/react-select';
 import SelectDemo from '../components/Select';
 
@@ -26,6 +26,14 @@ export default function VoiceRecorder() {
   const [isDragging, setDragging] = useState(false);
   const [onFiles, setOnFiles] = useState<File[]>([]);
   const [fileUploaded, setFileUploaded] = useState(false);
+  const [inputLevel, setInputLevel] = useState(0)            // 0–255 meter
+  const audioAnalyserRef = useRef<AnalyserNode | null>(null) // reference to the analyser
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec/60).toString().padStart(2,'0')
+    const s = (sec%60).toString().padStart(2,'0')
+    return `${m}:${s}`
+  }
+  
     /**
    * Convert any Blob (e.g. from MediaRecorder) into a base64 string
    */
@@ -301,15 +309,12 @@ export default function VoiceRecorder() {
             }}
             whileHover={{ scale: 1.05 }}
             style={{
-              gridColumn: 1,
-              gridRow: 1,
               justifySelf: 'start',    // left-align
               background: 'transparent',
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               cursor: 'pointer',
-              color: '#4A5568',
               fontSize: '0.875rem',
             }}
           >
@@ -359,6 +364,7 @@ export default function VoiceRecorder() {
                     onClick={() => removeFile()}
                   />
                 </div>
+
               ))}
             </div>
           </div>
@@ -368,17 +374,17 @@ export default function VoiceRecorder() {
         </div>
       ) : recording ? (
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-          <ArrowLeft size={24} style={{ color: '#a0aec0', marginBottom: '12px', cursor: 'pointer' }} onClick={() => setArmed(false)} />
-          <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>Uploading files?</div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>Recording...</div>
           <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>{recordingTime} seconds</div>
         </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          <ArrowLeft size={24} style={{ color: '#a0aec0', marginBottom: '12px', cursor: 'pointer' }} onClick={() => setArmed(false)} />
+          <div style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '16px' }}>Uploading files?</div>
+        </div>
       )}
       {
-       !fileUploaded && !recording && (
+       !fileUploaded && (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -495,17 +501,18 @@ export default function VoiceRecorder() {
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <ArrowLeft style={{ width: '20%', backgroundColor: 'white', alignSelf: 'flex-start', color: 'white' }} />
+              {passed ? (
+                <CheckCircle size={48} style={{ color: '#38a169', width: '60%' }} />
+              ) : (
+                <AlertCircle size={48} style={{ color: '#e53e3e', width: '60%' }} />
+              )}
               <X
                 onClick={() => setShowModal(false)}
                 size={24}
-                style={{ cursor: 'pointer', color: '#a0aec0', top: '16px', right: '16px', position: 'absolute' }}
+                style={{ cursor: 'pointer', color: '#a0aec0', width: '20%', alignSelf: 'flex-start' }}
               />
-              {passed ? (
-                <CheckCircle size={48} style={{ color: '#38a169' }} />
-              ) : (
-                <AlertCircle size={48} style={{ color: '#e53e3e' }} />
-              )}
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '12px' }}>
               {passed ? 'Select Registration Type' : 'Invalid Recording'}

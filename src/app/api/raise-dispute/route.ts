@@ -9,25 +9,30 @@ import { CID } from 'multiformats/cid'
 import { randomBytes } from 'crypto'
 
 export async function POST(request: Request) {
-    const { ipId, disputeType } = await request.json()
-    const cid = await generateCID()
-    // 1. Raise a Dispute
-    //
-    // Docs: https://docs.story.foundation/sdk-reference/dispute#raisedispute
-    const disputeResponse = await client.dispute.raiseDispute({
-        targetIpId: ipId,
-        cid: cid,
-        // you must pick from one of the whitelisted tags here:
-        // https://docs.story.foundation/concepts/dispute-module/overview#dispute-tags
-        targetTag: disputeType,
-        bond: parseEther('0.1'),
-        liveness: 2592000,
-        txOptions: { waitForTransaction: true },
-    })
-    console.log(`Dispute raised at transaction hash ${disputeResponse.txHash}, Dispute ID: ${disputeResponse.disputeId}`)
-    const disputeID = disputeResponse.disputeId?.toString()
-    const txHash = disputeResponse.txHash as `0x${string}`
-    return NextResponse.json({ disputeID: disputeID, txHash: txHash, cid: cid })
+    try {
+        const { ipId, disputeType } = await request.json()
+        const cid = await generateCID()
+        // 1. Raise a Dispute
+        //
+        // Docs: https://docs.story.foundation/sdk-reference/dispute#raisedispute
+        const disputeResponse = await client.dispute.raiseDispute({
+            targetIpId: ipId,
+            cid: cid,
+            // you must pick from one of the whitelisted tags here:
+            // https://docs.story.foundation/concepts/dispute-module/overview#dispute-tags
+            targetTag: disputeType,
+            bond: parseEther('0.1'),
+            liveness: 2592000,
+            txOptions: { waitForTransaction: true },
+        })
+        console.log(`Dispute raised at transaction hash ${disputeResponse.txHash}, Dispute ID: ${disputeResponse.disputeId}`)
+        const disputeID = disputeResponse.disputeId?.toString()
+        const txHash = disputeResponse.txHash as `0x${string}`
+        return NextResponse.json({ disputeID: disputeID, txHash: txHash, cid: cid })
+    } catch (error) {
+        console.error(error)
+        return NextResponse.json({ error: 'Failed to raise dispute' }, { status: 500 })
+    }
 }
 
 // example function just for demo purposes

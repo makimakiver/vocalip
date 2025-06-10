@@ -4,7 +4,7 @@ import "./AssetCard.css"
 import { client } from "../../../utils/config";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, MessageSquareWarning, SquareArrowOutUpRight, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, ArrowLeft, MessageSquareWarning, Space, SquareArrowOutUpRight, X, Mic, Loader2 } from 'lucide-react';
 type AssetCardProps = {
   assetId: string;
   creator: string;
@@ -46,7 +46,9 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeType, setDisputeType] = useState<DisputeType>(DisputeType.None);
   const [disputeButton, setDisputeButton] = useState(false);
-
+  const [showModal, setShowModal] = useState(false);
+  const [passed, setPassed] = useState(false);
+  const [disputeLoading, setDisputeLoading] = useState(false);
   useEffect(() => {
     if (disputeType !== DisputeType.None) {
       setDisputeButton(true);
@@ -126,15 +128,21 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
       alert("Please select a dispute type");
       return;
     }
+    setDisputeLoading(true);
     const res = await fetch("/api/raise-dispute", {
       method: "POST",
       body: JSON.stringify({ ipId: assetId, disputeType: disputeType }),
     });
     const json = await res.json();
     console.log(json);
+    setShowModal(true);
+    if (json.error) {
+      setPassed(false);
+    } else {
+      setPassed(true);
+    }
     setShowDisputeModal(false);
-    alert("Dispute Raised! Tx Hash: " + json.txHash);
-
+    setDisputeLoading(false);
   }
 
    const mintLicenseToken = async () => {
@@ -511,6 +519,180 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
         </motion.div>
       </motion.div>
     )}
+    </AnimatePresence>
+    <AnimatePresence>
+      {showModal && (
+        <motion.div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            style={{
+              width: '90%',
+              maxWidth: '400px',
+              backgroundColor: '#fff',
+              borderRadius: '16px',
+              padding: '32px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              textAlign: 'center',
+            }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          >
+            <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <ArrowLeft style={{ width: '20%', backgroundColor: 'white', alignSelf: 'flex-start', color: 'white' }} />
+              {passed ? (
+                <CheckCircle size={48} style={{ color: '#38a169', width: '60%' }} />
+              ) : (
+                <AlertCircle size={48} style={{ color: '#e53e3e', width: '60%' }} />
+              )}
+              <X
+                onClick={() => setShowModal(false)}
+                size={24}
+                style={{ cursor: 'pointer', color: '#a0aec0', width: '20%', alignSelf: 'flex-start' }}
+              />
+            </div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#2d3748', marginBottom: '12px' }}>
+              {passed ? 'Select Registration Type' : 'Invalid Recording'}
+            </h2>
+            <p style={{ color: '#4a5568', marginBottom: '24px' }}>
+              {passed
+                ? "Your recording is saved! Choose how you'd like to register:"  
+                : 'Invalid recording. Please try again.'}
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              {passed ? (
+                <>  
+                  <motion.button
+                    onClick={() => setShowModal(false)}
+                    whileHover={{ scale: 1.05 }}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '12px 0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      border: 'none',
+                      outline: 'none',
+                      color: '#fff',
+                      backgroundColor: '#3182ce',
+                    }}
+                  >
+                    <Mic style={{ marginRight: '8px' }} /> Back
+                  </motion.button>
+
+                </>
+              ) : (
+                <motion.button
+                  onClick={() => {
+                    setShowModal(false);
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                    cursor: 'pointer',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#fff',
+                    backgroundColor: '#2f855a',
+                  }}
+                >
+                  Try Again
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    <AnimatePresence>
+      {disputeLoading && (
+        <motion.div
+          key="loading-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+        >
+          <motion.div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          >
+            {/* 3 bouncing‐dots */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    backgroundColor: 'white'
+                  }}
+                  animate={{
+                    y: [0, -10, 0],
+                    opacity: [0.6, 1, 0.6]
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 0.8,
+                    delay: i * 0.2
+                  }}
+                />
+              ))}
+            </div>
+            <motion.span
+              style={{
+                color: 'white',
+                fontSize: '1.125rem',
+                fontWeight: 500
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: 0.4, duration: 0.3 }}
+            >
+              Loading...
+            </motion.span>
+          </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
     </div>
   );
