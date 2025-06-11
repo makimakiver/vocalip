@@ -1219,7 +1219,7 @@ export default function VoiceRecorder() {
                     fontSize: "1.125rem",
                   }}
                 >
-                  Click start when you\'re ready • Allow microphone access
+                  Click start when you're ready • Allow microphone access
                 </p>
               </div>
 
