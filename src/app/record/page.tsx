@@ -1255,18 +1255,16 @@ export default function VoiceRecorder() {
       <div
         style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}
       >
-        <input
-          type="checkbox"
-          id="tenSec"
-          style={{ marginRight: "8px" }}
-          defaultChecked
-        />
-        <label
-          htmlFor="tenSec"
-          style={{ color: "#4a5568", fontSize: "0.875rem" }}
+        <p
+          style={{
+            color: "#718096",
+            fontSize: "0.875rem",
+            margin: 0,
+            fontStyle: "italic",
+          }}
         >
-          30 seconds of audio required
-        </label>
+          Recording must be 30 seconds minimum
+        </p>
       </div>
       <button
         onClick={(e) => handleNext(e)}
