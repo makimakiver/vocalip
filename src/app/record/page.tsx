@@ -547,7 +547,7 @@ export default function VoiceRecorder() {
     <div
       style={{
         minHeight: "100vh",
-        background:
+        backgroundImage:
           "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)",
         position: "relative",
         overflow: "hidden",
@@ -555,16 +555,28 @@ export default function VoiceRecorder() {
     >
       {/* Animated background elements */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-        {[...Array(8)].map((_, i) => (
+        {[
+          { size: 300, left: "10%", top: "15%", opacity: 0.1, duration: 20 },
+          { size: 400, left: "70%", top: "10%", opacity: 0.09, duration: 22 },
+          { size: 500, left: "30%", top: "60%", opacity: 0.08, duration: 24 },
+          { size: 600, left: "80%", top: "40%", opacity: 0.07, duration: 26 },
+          { size: 700, left: "20%", top: "80%", opacity: 0.06, duration: 28 },
+          { size: 800, left: "60%", top: "30%", opacity: 0.05, duration: 30 },
+          { size: 900, left: "40%", top: "70%", opacity: 0.04, duration: 32 },
+          { size: 1000, left: "90%", top: "50%", opacity: 0.03, duration: 34 },
+        ].map((item, i) => (
           <motion.div
             key={i}
             style={{
               position: "absolute",
+              width: `${item.size}px`,
+              height: `${item.size}px`,
+              left: item.left,
+              top: item.top,
               borderRadius: "50%",
-              background: `radial-gradient(circle, rgba(251, 191, 36, ${
-                0.1 - i * 0.01
-              }) 0%, transparent 70%)`,
+              backgroundImage: `radial-gradient(circle, rgba(251, 191, 36, ${item.opacity}) 0%, transparent 70%)`,
               filter: "blur(40px)",
+              willChange: "transform",
             }}
             animate={{
               x: [0, 100, -100, 0],
@@ -572,16 +584,10 @@ export default function VoiceRecorder() {
               scale: [1, 1.5, 1, 1.2],
             }}
             transition={{
-              duration: 20 + i * 2,
+              duration: item.duration,
               repeat: Infinity,
               repeatType: "reverse",
               ease: "easeInOut",
-            }}
-            initial={{
-              width: `${300 + i * 100}px`,
-              height: `${300 + i * 100}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
             }}
           />
         ))}
@@ -614,7 +620,7 @@ export default function VoiceRecorder() {
               fontSize: "4rem",
               fontWeight: "700",
               marginBottom: "16px",
-              background:
+              backgroundImage:
                 "linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #dc2626 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -673,7 +679,7 @@ export default function VoiceRecorder() {
               key={index}
               whileHover={{ scale: 1.05, y: -5 }}
               style={{
-                background: "rgba(255, 255, 255, 0.05)",
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
                 backdropFilter: "blur(10px)",
                 borderRadius: "16px",
                 padding: "24px",
@@ -687,7 +693,7 @@ export default function VoiceRecorder() {
                   width: "48px",
                   height: "48px",
                   borderRadius: "12px",
-                  background: `linear-gradient(135deg, ${item.color}40, ${item.color}20)`,
+                  backgroundImage: `linear-gradient(135deg, ${item.color}40, ${item.color}20)`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -750,7 +756,7 @@ export default function VoiceRecorder() {
           onDragOver={handleDrag}
           onDrop={handleDrop}
           style={{
-            background: isDragging
+            backgroundColor: isDragging
               ? "rgba(251, 191, 36, 0.1)"
               : recording
               ? "rgba(239, 68, 68, 0.05)"
@@ -870,7 +876,7 @@ export default function VoiceRecorder() {
                     setFileUploaded(false);
                   }}
                   style={{
-                    background: "rgba(255, 255, 255, 0.1)",
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
                     border: "none",
                     borderRadius: "12px",
                     padding: "8px",
@@ -911,7 +917,7 @@ export default function VoiceRecorder() {
                     transition={{ delay: index * 0.1 }}
                     whileHover={{ scale: 1.02 }}
                     style={{
-                      background: "rgba(255, 255, 255, 0.1)",
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
                       borderRadius: "12px",
                       padding: "16px",
                       display: "flex",
@@ -933,7 +939,7 @@ export default function VoiceRecorder() {
                           width: "48px",
                           height: "48px",
                           borderRadius: "12px",
-                          background:
+                          backgroundImage:
                             "linear-gradient(135deg, #fbbf24, #f59e0b)",
                           display: "flex",
                           alignItems: "center",
@@ -964,7 +970,7 @@ export default function VoiceRecorder() {
                         removeFile();
                       }}
                       style={{
-                        background: "rgba(239, 68, 68, 0.2)",
+                        backgroundColor: "rgba(239, 68, 68, 0.2)",
                         border: "none",
                         borderRadius: "12px",
                         padding: "8px",
@@ -1004,7 +1010,8 @@ export default function VoiceRecorder() {
                   style={{
                     fontSize: "5rem",
                     fontWeight: "700",
-                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                    backgroundImage:
+                      "linear-gradient(135deg, #ef4444, #dc2626)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     marginBottom: "16px",
@@ -1059,7 +1066,7 @@ export default function VoiceRecorder() {
                     style={{
                       height: "12px",
                       borderRadius: "6px",
-                      background: `linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #ef4444 100%)`,
+                      backgroundImage: `linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #ef4444 100%)`,
                       transformOrigin: "left",
                     }}
                     animate={{
@@ -1122,7 +1129,7 @@ export default function VoiceRecorder() {
                   alignItems: "center",
                   gap: "12px",
                   padding: "20px 48px",
-                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  backgroundImage: "linear-gradient(135deg, #ef4444, #dc2626)",
                   color: "#fff",
                   borderRadius: "50px",
                   border: "none",
@@ -1185,7 +1192,7 @@ export default function VoiceRecorder() {
                   width: "160px",
                   height: "160px",
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                  backgroundImage: "linear-gradient(135deg, #fbbf24, #f59e0b)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1262,7 +1269,7 @@ export default function VoiceRecorder() {
               alignItems: "center",
               gap: "12px",
               padding: "20px 48px",
-              background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+              backgroundImage: "linear-gradient(135deg, #fbbf24, #f59e0b)",
               color: "#fff",
               borderRadius: "50px",
               border: "none",
@@ -1290,10 +1297,12 @@ export default function VoiceRecorder() {
             style={{
               marginTop: "40px",
               padding: "16px 48px",
-              background:
+              backgroundImage:
                 onFiles.length > 0
                   ? "linear-gradient(135deg, #fbbf24, #f59e0b)"
-                  : "rgba(255, 255, 255, 0.1)",
+                  : "none",
+              backgroundColor:
+                onFiles.length > 0 ? "transparent" : "rgba(255, 255, 255, 0.1)",
               color: onFiles.length > 0 ? "#fff" : "rgba(255, 255, 255, 0.3)",
               borderRadius: "50px",
               fontWeight: "600",
@@ -1338,7 +1347,7 @@ export default function VoiceRecorder() {
                 width: "90%",
                 maxWidth: recordingError ? "500px" : "500px",
                 backgroundColor: "#1e1b4b",
-                background: "linear-gradient(135deg, #1e1b4b, #312e81)",
+                backgroundImage: "linear-gradient(135deg, #1e1b4b, #312e81)",
                 borderRadius: "24px",
                 padding: "40px",
                 boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
@@ -1380,7 +1389,7 @@ export default function VoiceRecorder() {
                   width: "80px",
                   height: "80px",
                   borderRadius: "50%",
-                  background: passed
+                  backgroundImage: passed
                     ? "linear-gradient(135deg, #10b981, #059669)"
                     : "linear-gradient(135deg, #ef4444, #dc2626)",
                   display: "flex",
@@ -1448,7 +1457,8 @@ export default function VoiceRecorder() {
                         gap: "12px",
                         padding: "24px",
                         borderRadius: "16px",
-                        background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                        backgroundImage:
+                          "linear-gradient(135deg, #3b82f6, #2563eb)",
                         border: "none",
                         cursor: "pointer",
                         color: "#fff",
@@ -1479,7 +1489,8 @@ export default function VoiceRecorder() {
                         gap: "12px",
                         padding: "24px",
                         borderRadius: "16px",
-                        background: "linear-gradient(135deg, #10b981, #059669)",
+                        backgroundImage:
+                          "linear-gradient(135deg, #10b981, #059669)",
                         border: "none",
                         cursor: "pointer",
                         color: "#fff",
@@ -1507,7 +1518,8 @@ export default function VoiceRecorder() {
                     style={{
                       padding: "14px 32px",
                       borderRadius: "50px",
-                      background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                      backgroundImage:
+                        "linear-gradient(135deg, #fbbf24, #f59e0b)",
                       border: "none",
                       cursor: "pointer",
                       color: "#fff",
