@@ -12,7 +12,7 @@ export async function POST(request: Request) {
         //
         // Docs: https://docs.story.foundation/concepts/ip-asset/ipa-metadata-standard
     // you should already have a client set up (prerequisite
-    const { creator_address, imageCid, voiceCid, name, description, commercialShare, derivativeAttribution, voiceId } = await request.json()
+    const { creator_address, imageCid, voiceCid, name, description, commercialShare, derivativeAttribution, voiceId, defaultMintingFee } = await request.json()
     const imageUri = `https://${process.env.GATEWAY_URL}/ipfs/${imageCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`
     const voiceUri = `https://${process.env.GATEWAY_URL}/ipfs/${voiceCid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`
     const ipMetadata = {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         creators: [
         {
             name: "Voice Training data",
-            address: "0x67ee74EE04A0E6d14Ca6C27428B27F3EFd5CD084",
+            address: creator_address,
             description: "Registering the voice data as an IP Asset",
             contributionPercent: 100,
         },
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         tokenId: tokenId!,
         licenseTermsData: [
             {
-                terms: createCommercialRemixTerms({ defaultMintingFee: 1, commercialRevShare: commercialShare }),
+                terms: createCommercialRemixTerms({ defaultMintingFee: defaultMintingFee, commercialRevShare: commercialShare }),
             },
         ],
         ipMetadata: {

@@ -262,7 +262,7 @@ export default function AssetCard({
           {truncate(assetId)}
         </a>
         <div className="asset-card-creator">
-          Creator: <span>{truncate(creatorAddr)}</span>
+          Creator: <span>{truncate(creatorAddr.toString())}</span>
         </div>
         {/* Always render an audio player below for control */}
         <audio

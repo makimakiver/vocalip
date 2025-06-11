@@ -12,7 +12,7 @@ const apps: AppCard[] = [
     title: 'Reel Video Creator',
     description:
       'Create reels with voices on this platform and profits will be shared with you and the creator of the voice.',
-    link: '/video-creator',
+    link: '/brain-rot',
   },
 ];
 

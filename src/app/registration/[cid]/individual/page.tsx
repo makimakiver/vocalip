@@ -26,6 +26,7 @@ import {
   Loader2,
   ChevronRight,
   Image as ImageIcon,
+  File,
 } from "lucide-react";
 
 export default function PILTermsPage() {
@@ -50,6 +51,7 @@ export default function PILTermsPage() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
   const [registrationData, setRegistrationData] = useState(null);
+  const [defaultMintingFee, setDefaultMintingFee] = useState(0);
   const fileInputRef = useRef(null);
 
   // Clean up URL object on unmount or change
@@ -173,7 +175,7 @@ export default function PILTermsPage() {
       });
       const cloningData = await cloningResponse.json();
       const payload = {
-        creator_address: walletClient?.account,
+        creator_address: walletClient?.account.address,
         imageCid: data.cid,
         voiceCid: cid,
         name: voiceName,
@@ -181,6 +183,7 @@ export default function PILTermsPage() {
         commercialShare: commercialShare,
         derivativeAttribution: derivativeAttribution,
         voiceId: cloningData.cid,
+        defaultMintingFee: defaultMintingFee,
       };
       const registrationResponse = await fetch("/api/register", {
         method: "POST",
@@ -826,7 +829,66 @@ export default function PILTermsPage() {
                     </span>
                   </div>
                 </motion.div>
-
+                {/* Default Minting Fee */}
+                <motion.div whileHover={{ scale: 1.02 }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "12px",
+                      color: "#fff",
+                      fontSize: "0.95rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    <File size={18} color="#a855f7" />
+                    Default Minting Fee
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="number"
+                      value={defaultMintingFee}
+                      onChange={(e) => setDefaultMintingFee(Number(e.target.value))}
+                      placeholder="1"
+                      min="0"
+                      max="100"
+                      style={{
+                        width: "100%",
+                        padding: "14px 50px 14px 20px",
+                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        fontSize: "1rem",
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "rgba(168, 85, 247, 0.5)";
+                        e.target.style.backgroundColor =
+                          "rgba(255, 255, 255, 0.08)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                        e.target.style.backgroundColor =
+                          "rgba(255, 255, 255, 0.05)";
+                      }}
+                    />
+                    <span
+                      style={{
+                        position: "absolute",
+                        right: "20px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "rgba(255, 255, 255, 0.5)",
+                        fontSize: "1rem",
+                      }}
+                    >
+                      IP
+                    </span>
+                  </div>
+                </motion.div>
                 {/* Checkboxes */}
                 <div
                   style={{
