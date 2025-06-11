@@ -14,10 +14,13 @@ import {
   Play,
   StopCircle,
   ArrowLeft,
-  Space,
+  Waves,
+  Volume2,
+  Shield,
+  Headphones,
 } from "lucide-react";
-import * as Select from "@radix-ui/react-select";
-import SelectDemo from "../components/Select";
+// import * as Select from '@radix-ui/react-select'
+// import SelectDemo from '../components/Select'
 
 export default function VoiceRecorder() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -168,293 +171,117 @@ export default function VoiceRecorder() {
     };
   }, []);
 
-  // Test visualization without audio
-  const drawTestBars = () => {
-    if (!canvasRef || !canvasRef.current || !isVisualizationRunning) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.fillStyle = "#1a202c";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw animated bars
-    const time = Date.now() / 500;
-    const barCount = 30;
-    const barWidth = canvas.width / barCount;
-
-    for (let i = 0; i < barCount; i++) {
-      const height = Math.abs(Math.sin(time + i * 0.5)) * canvas.height * 0.8;
-      const hue = (i * 10 + time * 50) % 360;
-
-      ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
-      ctx.fillRect(
-        i * barWidth + 1,
-        canvas.height - height,
-        barWidth - 2,
-        height
-      );
-    }
-
-    // Show message
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "14px Arial";
-    ctx.fillText("Test visualization - Microphone not connected", 10, 30);
-
-    animationFrameRef.current = requestAnimationFrame(drawTestBars);
-  };
-
-  // Super simple visualization for debugging
-  const drawSimpleVisualization = () => {
-    if (frameCount < 5) {
-      console.log(`drawSimpleVisualization frame ${frameCount}`);
-      setFrameCount((prev) => prev + 1);
-    }
-
-    if (!isVisualizationRunning) {
-      console.log("Visualization stopped");
-      return;
-    }
-
-    if (!canvasRef || !canvasRef.current) {
-      console.log("No canvas ref");
-      return;
-    }
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.log("No canvas context");
-      return;
-    }
-
-    // Clear canvas with visible color to ensure it's rendering
-    ctx.fillStyle = "#2a2a2a";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // If we have an analyser, try to get some data
-    if (audioAnalyserRef.current) {
-      const analyser = audioAnalyserRef.current;
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteFrequencyData(dataArray);
-
-      // Calculate simple average
-      let sum = 0;
-      for (let i = 0; i < Math.min(dataArray.length, 50); i++) {
-        sum += dataArray[i];
-      }
-      const avg = sum / 50;
-
-      // Update level
-      setInputLevel(Math.min(100, avg));
-
-      // Draw a simple meter
-      const meterWidth = (avg / 255) * canvas.width;
-      ctx.fillStyle = avg > 50 ? "#38a169" : "#ef4444";
-      ctx.fillRect(0, 40, meterWidth, 20);
-
-      // Draw some text to show it's working
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "14px Arial";
-      ctx.fillText(`Audio Level: ${Math.round(avg)}`, 10, 30);
-
-      // Draw frame counter to show it's animating
-      ctx.fillText(`Frame: ${Date.now() % 1000}`, 10, 80);
-
-      // Debug: show first few data values
-      if (frameCount < 5) {
-        console.log("Data sample:", dataArray.slice(0, 10));
-      }
-    } else {
-      // No analyser - just draw test pattern
-      ctx.fillStyle = "#ff0000";
-      ctx.fillRect(0, 0, 100, 20);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "14px Arial";
-      ctx.fillText("No audio analyser!", 10, 50);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(drawSimpleVisualization);
-  };
-
-  // Simple test visualization to ensure canvas works
-  const drawTestVisualization = () => {
-    console.log("drawTestVisualization called");
-    if (!canvasRef.current) {
-      console.log("No canvas ref");
-      return;
-    }
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.log("No canvas context");
-      return;
-    }
-
-    // Clear canvas
-    ctx.fillStyle = "#1a202c";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw animated test bars
-    const time = Date.now() / 1000;
-    ctx.fillStyle = "#38a169";
-
-    for (let i = 0; i < 10; i++) {
-      const height = Math.abs(Math.sin(time + i)) * canvas.height * 0.8;
-      ctx.fillRect(i * 50, canvas.height - height, 40, height);
-    }
-
-    if (recording) {
-      requestAnimationFrame(drawTestVisualization);
-    }
-  };
-
-  // Scrolling waveform visualization
-  const drawVolumeVisualization = () => {
+  // Enhanced visualization with frequency bars
+  const drawEnhancedVisualization = () => {
     if (
       !canvasRef ||
       !canvasRef.current ||
       !audioAnalyserRef.current ||
       !isRecordingRef.current
     ) {
-      console.log("Stopping visualization - missing requirements");
       return;
     }
 
     const canvas = canvasRef.current;
     const canvasCtx = canvas.getContext("2d");
-    if (!canvasCtx) {
-      console.error("No canvas context");
-      return;
+    if (!canvasCtx) return;
+
+    const analyser = audioAnalyserRef.current;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    analyser.getByteFrequencyData(dataArray);
+
+    // Calculate average volume
+    let sum = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      sum += dataArray[i];
+    }
+    const average = sum / bufferLength;
+    setInputLevel(Math.min(100, average));
+
+    // Clear canvas with gradient
+    const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "#1e1b4b");
+    gradient.addColorStop(1, "#312e81");
+    canvasCtx.fillStyle = gradient;
+    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw frequency bars
+    const barWidth = (canvas.width / bufferLength) * 2.5;
+    let x = 0;
+
+    for (let i = 0; i < bufferLength; i++) {
+      const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+
+      // Create gradient for bars
+      const barGradient = canvasCtx.createLinearGradient(
+        0,
+        canvas.height - barHeight,
+        0,
+        canvas.height
+      );
+
+      if (barHeight > canvas.height * 0.6) {
+        // High levels - red/orange
+        barGradient.addColorStop(0, "#ef4444");
+        barGradient.addColorStop(0.5, "#f59e0b");
+        barGradient.addColorStop(1, "#fbbf24");
+      } else if (barHeight > canvas.height * 0.3) {
+        // Medium levels - orange/yellow
+        barGradient.addColorStop(0, "#f59e0b");
+        barGradient.addColorStop(0.5, "#fbbf24");
+        barGradient.addColorStop(1, "#facc15");
+      } else {
+        // Low levels - yellow
+        barGradient.addColorStop(0, "#fbbf24");
+        barGradient.addColorStop(1, "#fde047");
+      }
+
+      canvasCtx.fillStyle = barGradient;
+      canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+
+      // Add glow effect for higher bars
+      if (barHeight > canvas.height * 0.5) {
+        canvasCtx.shadowBlur = 20;
+        canvasCtx.shadowColor = "#fbbf24";
+        canvasCtx.fillRect(
+          x,
+          canvas.height - barHeight,
+          barWidth - 2,
+          barHeight
+        );
+        canvasCtx.shadowBlur = 0;
+      }
+
+      x += barWidth;
     }
 
-    try {
-      const analyser = audioAnalyserRef.current;
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    // Add decorative elements
+    canvasCtx.strokeStyle = "rgba(251, 191, 36, 0.2)";
+    canvasCtx.lineWidth = 1;
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(0, canvas.height / 2);
+    canvasCtx.lineTo(canvas.width, canvas.height / 2);
+    canvasCtx.stroke();
 
-      // Get time domain data for waveform
-      analyser.getByteTimeDomainData(dataArray);
+    // Recording indicator with pulse
+    const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+    canvasCtx.fillStyle = "#ef4444";
+    canvasCtx.beginPath();
+    canvasCtx.arc(canvas.width - 30, 30, 12, 0, Math.PI * 2);
+    canvasCtx.fill();
 
-      // Calculate average volume from frequency data for the meter
-      analyser.getByteFrequencyData(dataArray);
-      let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
-      }
-      const average = sum / dataArray.length;
-      const normalizedLevel = Math.min(100, average);
-      setInputLevel(normalizedLevel);
-
-      // Get waveform data
-      analyser.getByteTimeDomainData(dataArray);
-
-      // Find the loudest sample in this frame
-      let max = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const sample = Math.abs(dataArray[i] - 128);
-        if (sample > max) max = sample;
-      }
-
-      // Add to waveform history
-      waveformDataRef.current.push(max);
-
-      // Keep only the last N samples (based on canvas width)
-      const maxSamples = Math.floor(canvas.width / 3); // 3 pixels per sample
-      if (waveformDataRef.current.length > maxSamples) {
-        waveformDataRef.current = waveformDataRef.current.slice(-maxSamples);
-      }
-
-      // Clear canvas with gradient background
-      const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#0f172a");
-      gradient.addColorStop(1, "#1e293b");
-      canvasCtx.fillStyle = gradient;
-      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw grid lines for visual reference
-      canvasCtx.strokeStyle = "rgba(255, 255, 255, 0.05)";
-      canvasCtx.lineWidth = 1;
-      for (let i = 0; i < canvas.height; i += 20) {
-        canvasCtx.beginPath();
-        canvasCtx.moveTo(0, i);
-        canvasCtx.lineTo(canvas.width, i);
-        canvasCtx.stroke();
-      }
-
-      // Draw the waveform
-      canvasCtx.beginPath();
-      canvasCtx.strokeStyle =
-        normalizedLevel < 30
-          ? "#10b981"
-          : normalizedLevel < 70
-          ? "#f59e0b"
-          : "#ef4444";
-      canvasCtx.lineWidth = 2;
-      canvasCtx.shadowBlur = 10;
-      canvasCtx.shadowColor = canvasCtx.strokeStyle;
-
-      const centerY = canvas.height / 2;
-
-      for (let i = 0; i < waveformDataRef.current.length; i++) {
-        const x = canvas.width - (waveformDataRef.current.length - i) * 3;
-        const amplitude =
-          (waveformDataRef.current[i] / 128) * (canvas.height * 0.4);
-
-        if (i === 0) {
-          canvasCtx.moveTo(x, centerY);
-        }
-
-        // Draw both positive and negative sides of the waveform
-        const y1 = centerY - amplitude;
-        const y2 = centerY + amplitude;
-
-        canvasCtx.lineTo(x, y1);
-        canvasCtx.lineTo(x, y2);
-        canvasCtx.lineTo(x, centerY);
-      }
-
-      canvasCtx.stroke();
-
-      // Draw center line
-      canvasCtx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-      canvasCtx.lineWidth = 1;
-      canvasCtx.shadowBlur = 0;
-      canvasCtx.setLineDash([5, 5]);
-      canvasCtx.beginPath();
-      canvasCtx.moveTo(0, centerY);
-      canvasCtx.lineTo(canvas.width, centerY);
-      canvasCtx.stroke();
-      canvasCtx.setLineDash([]);
-
-      // Draw level indicator and time
-      canvasCtx.fillStyle = "#ffffff";
-      canvasCtx.font = "12px Arial";
-      canvasCtx.shadowBlur = 0;
-      canvasCtx.fillText(`Level: ${Math.round(normalizedLevel)}%`, 10, 20);
-
-      // Add a recording indicator
-      canvasCtx.fillStyle = "#ef4444";
-      canvasCtx.beginPath();
-      canvasCtx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
-      canvasCtx.fill();
-
-      // Pulse effect for recording indicator
-      const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
-      canvasCtx.globalAlpha = pulse;
-      canvasCtx.beginPath();
-      canvasCtx.arc(canvas.width - 20, 20, 8, 0, Math.PI * 2);
-      canvasCtx.fill();
-      canvasCtx.globalAlpha = 1;
-    } catch (error) {
-      console.error("Error in visualization:", error);
-    }
+    // Pulse ring
+    canvasCtx.strokeStyle = `rgba(239, 68, 68, ${pulse})`;
+    canvasCtx.lineWidth = 3;
+    canvasCtx.beginPath();
+    canvasCtx.arc(canvas.width - 30, 30, 20 + pulse * 10, 0, Math.PI * 2);
+    canvasCtx.stroke();
 
     if (isRecordingRef.current) {
       animationFrameRef.current = requestAnimationFrame(
-        drawVolumeVisualization
+        drawEnhancedVisualization
       );
     }
   };
@@ -535,23 +362,9 @@ export default function VoiceRecorder() {
 
       // Start visualization after a small delay to ensure canvas is ready
       setTimeout(() => {
-        console.log("Starting visualization...");
-        if (canvasRef && canvasRef.current) {
-          console.log("Canvas element:", canvasRef.current);
-          console.log(
-            "Canvas dimensions:",
-            canvasRef.current.width,
-            canvasRef.current.height
-          );
-        } else {
-          console.log("Canvas ref not ready yet");
-        }
-        console.log("Analyser:", audioAnalyserRef?.current);
-
         setIsVisualizationRunning(true);
         setFrameCount(0);
-        // Start the visualization loop directly without relying on state
-        drawVolumeVisualization();
+        drawEnhancedVisualization();
       }, 100);
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -696,33 +509,6 @@ export default function VoiceRecorder() {
         console.log("CID", cid.cid);
         setCurrentCid(cid.cid);
 
-        // const res2 = await fetch('/api/humanValidation', {
-        //   method: 'POST',
-        //   body: JSON.stringify({ voiceCid: cid.cid }),
-        // });
-        // const text = await res2.json();
-        // console.log('Text', text.text);
-        // console.log('Similarity', text.similarity_score);
-        // if (text.similarity_score > 0.8) {
-        //   setPassed(true);
-        // } else {
-        //   setPassed(false);
-        // }
-        // 5) decode to AudioBuffer (PCM)
-        if (!audioContextRef.current) {
-          audioContextRef.current = new AudioContext();
-        }
-
-        // audioContextRef.current.decodeAudioData(
-        //   buf,
-        //   (decoded) => {
-        //     setAudioBuffer(decoded);
-        //   },
-        //   (err) => {
-        //     console.error('decodeAudioData error', err);
-        //   }
-        // );
-
         setPassed(true);
         setShowModal(true);
       } catch (error) {
@@ -752,8 +538,8 @@ export default function VoiceRecorder() {
 
   // Get color for level
   const getMeterColor = (level: number) => {
-    if (level < 30) return "#38a169"; // Green
-    if (level < 70) return "#f59e0b"; // Yellow
+    if (level < 30) return "#10b981"; // Green
+    if (level < 70) return "#fbbf24"; // Yellow
     return "#ef4444"; // Red
   };
 
@@ -761,539 +547,770 @@ export default function VoiceRecorder() {
     <div
       style={{
         minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        flexDirection: "column",
+        background:
+          "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          height: "100px",
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          marginTop: "8vh",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <h2
+      {/* Animated background elements */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
             style={{
-              fontSize: "2rem",
-              fontWeight: 600,
-              color: "#2d3748",
-              marginBottom: "16px",
+              position: "absolute",
+              borderRadius: "50%",
+              background: `radial-gradient(circle, rgba(251, 191, 36, ${
+                0.1 - i * 0.01
+              }) 0%, transparent 70%)`,
+              filter: "blur(40px)",
             }}
-          >
-            Instant Voice Clone
-          </h2>
-        </div>
+            animate={{
+              x: [0, 100, -100, 0],
+              y: [0, -100, 100, 0],
+              scale: [1, 1.5, 1, 1.2],
+            }}
+            transition={{
+              duration: 20 + i * 2,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
+            initial={{
+              width: `${300 + i * 100}px`,
+              height: `${300 + i * 100}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+          />
+        ))}
       </div>
-      {/* Instruction Panel */}
-      <div style={{ display: "flex", gap: "32px", marginBottom: "24px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
-          <AlertCircle style={{ color: "#4a5568", marginTop: "4px" }} />
-          <div>
-            <h4 style={{ margin: 0, fontWeight: 500, color: "#2d3748" }}>
-              Avoid noisy environments
-            </h4>
-            <p
-              style={{
-                margin: "4px 0 0",
-                color: "#718096",
-                fontSize: "0.875rem",
-              }}
-            >
-              Background sounds interfere with recording quality.
-            </p>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
-          <CheckCircle style={{ color: "#4a5568", marginTop: "4px" }} />
-          <div>
-            <h4 style={{ margin: 0, fontWeight: 500, color: "#2d3748" }}>
-              Check microphone quality
-            </h4>
-            <p
-              style={{
-                margin: "4px 0 0",
-                color: "#718096",
-                fontSize: "0.875rem",
-              }}
-            >
-              Use external or headphone mics for better capture.
-            </p>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
-          <Microphone style={{ color: "#4a5568", marginTop: "4px" }} />
-          <div>
-            <h4 style={{ margin: 0, fontWeight: 500, color: "#2d3748" }}>
-              Use consistent equipment
-            </h4>
-            <p
-              style={{
-                margin: "4px 0 0",
-                color: "#718096",
-                fontSize: "0.875rem",
-              }}
-            >
-              Don't change equipment between samples.
-            </p>
-          </div>
-        </div>
-      </div>
+
       <div
         style={{
-          display: "flex",
-          gap: "32px",
-          marginBottom: "24px",
-          justifyContent: "center",
-          width: "100%",
-          marginLeft: "40vw",
-        }}
-      >
-        <SelectDemo />
-      </div>
-      {/* Upload / Record Section */}
-      <div
-        onClick={() => {
-          if (armed) {
-            return;
-          }
-          triggerFileSelect();
-        }}
-        onDragEnter={handleDragIn}
-        onDragLeave={handleDragOut}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        style={{
-          border: isDragging ? "2px dashed #3b82f6" : "2px dashed #cbd5e0",
-          borderRadius: "12px",
-          padding: !armed && fileUploaded && onFiles ? "0px" : "32px",
+          position: "relative",
+          zIndex: 1,
+          padding: "40px 20px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          textAlign: "center",
-          backgroundColor: isDragging ? "#eff6ff" : "#fff",
-          marginBottom: "16px",
-          minWidth: "600px",
-          height: recording ? "320px" : "200px",
-          transition: "all 0.2s ease",
+          maxWidth: "1200px",
+          margin: "0 auto",
         }}
       >
-        {!armed && !fileUploaded ? (
-          <>
-            <UploadCloud
-              size={30}
-              style={{ color: "#a0aec0", marginBottom: "12px" }}
-            />
-            <p style={{ margin: 0, color: "#4a5568" }}>
-              Click to upload, or drag and drop
-            </p>
-            <p
-              style={{
-                margin: "4px 0 16px",
-                color: "#a0aec0",
-                fontSize: "0.875rem",
-              }}
-            >
-              Audio or video, up to 10MB each
-            </p>
-            <span
-              style={{
-                color: "#a0aec0",
-                fontSize: "0.875rem",
-                marginBottom: "16px",
-              }}
-            >
-              or
-            </span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="audio/mpeg, audio/wav, audio/mp3, video/mp4, video/webm"
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-            />
-          </>
-        ) : !armed && fileUploaded && onFiles ? (
-          <div
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          style={{
+            textAlign: "center",
+            marginBottom: "48px",
+          }}
+        >
+          <h1
             style={{
-              padding: "16px",
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              fontSize: "4rem",
+              fontWeight: "700",
+              marginBottom: "16px",
+              background:
+                "linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #dc2626 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "0 0 40px rgba(251, 191, 36, 0.5)",
             }}
           >
-            {/* Back button sits at the left of the cell */}
-            <div
+            Instant Voice Clone
+          </h1>
+          <p
+            style={{
+              fontSize: "1.5rem",
+              color: "rgba(255, 255, 255, 0.8)",
+              maxWidth: "700px",
+              margin: "0 auto",
+            }}
+          >
+            Create your unique voice IP asset with professional-grade recording
+          </p>
+        </motion.div>
+
+        {/* Instruction Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "20px",
+            marginBottom: "40px",
+            width: "100%",
+            maxWidth: "900px",
+          }}
+        >
+          {[
+            {
+              icon: <Shield />,
+              title: "Quiet Environment",
+              description: "Find a noise-free space for optimal quality",
+              color: "#10b981",
+            },
+            {
+              icon: <Headphones />,
+              title: "Quality Equipment",
+              description: "Use a good microphone or headset",
+              color: "#3b82f6",
+            },
+            {
+              icon: <Waves />,
+              title: "Consistent Voice",
+              description: "Maintain steady tone and volume",
+              color: "#f59e0b",
+            },
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              whileHover={{ scale: 1.05, y: -5 }}
               style={{
-                display: "flex",
-                flexDirection: "row",
-                textAlign: "left",
-                width: "100%",
-                justifyContent: "flex-start",
-                alignItems: "flex-start",
-                borderRadius: "12px",
+                background: "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "blur(10px)",
+                borderRadius: "16px",
+                padding: "24px",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
               }}
             >
-              <motion.button
-                onClick={() => {
-                  setOnFiles([]);
-                  setFileUploaded(false);
-                }}
-                whileHover={{ scale: 1.05 }}
+              <div
                 style={{
-                  justifySelf: "start", // left-align
-                  background: "transparent",
-                  border: "none",
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "12px",
+                  background: `linear-gradient(135deg, ${item.color}40, ${item.color}20)`,
                   display: "flex",
                   alignItems: "center",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
+                  justifyContent: "center",
+                  marginBottom: "16px",
                 }}
               >
-                <ArrowLeft size={20} /> Back
-              </motion.button>
+                {React.cloneElement(item.icon, { size: 24, color: item.color })}
+              </div>
+              <h3
+                style={{
+                  fontSize: "1.125rem",
+                  fontWeight: "600",
+                  color: "#fff",
+                  marginBottom: "8px",
+                }}
+              >
+                {item.title}
+              </h3>
+              <p
+                style={{
+                  fontSize: "0.875rem",
+                  color: "rgba(255, 255, 255, 0.7)",
+                }}
+              >
+                {item.description}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Model Selection */}
+        {/* <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          style={{
+            marginBottom: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+          }}
+        >
+          <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500' }}>
+            AI Model:
+          </span>
+          <SelectDemo />
+        </motion.div> */}
+
+        {/* Main Recording/Upload Area */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          onClick={() => {
+            if (armed || recording) return;
+            triggerFileSelect();
+          }}
+          onDragEnter={handleDragIn}
+          onDragLeave={handleDragOut}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          style={{
+            background: isDragging
+              ? "rgba(251, 191, 36, 0.1)"
+              : recording
+              ? "rgba(239, 68, 68, 0.05)"
+              : "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(20px)",
+            borderStyle: recording ? "solid" : "dashed",
+            borderWidth: "3px",
+            borderColor: isDragging
+              ? "#fbbf24"
+              : recording
+              ? "#ef4444"
+              : "rgba(255, 255, 255, 0.2)",
+            borderRadius: "24px",
+            padding: recording ? "48px" : "0",
+            minWidth: "900px",
+            minHeight: recording ? "500px" : "400px",
+            transition: "all 0.3s ease",
+            cursor: armed || recording ? "default" : "pointer",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {!armed && !fileUploaded ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "400px",
+                gap: "32px",
+              }}
+            >
+              <motion.div
+                animate={{
+                  y: [0, -10, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <UploadCloud size={80} style={{ color: "#fbbf24" }} />
+              </motion.div>
+              <div style={{ textAlign: "center" }}>
+                <p
+                  style={{
+                    fontSize: "1.5rem",
+                    color: "#fff",
+                    fontWeight: "500",
+                  }}
+                >
+                  Drop your audio file here
+                </p>
+                <p
+                  style={{
+                    color: "rgba(255, 255, 255, 0.6)",
+                    marginTop: "8px",
+                    fontSize: "1.125rem",
+                  }}
+                >
+                  or click to browse • Max 10MB
+                </p>
+              </div>
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "column",
-                  textAlign: "left",
-                  width: "100%",
-                  justifyContent: "center",
                   alignItems: "center",
-                  padding: "12px",
-                  borderRadius: "12px",
+                  gap: "32px",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  margin: "16px 0",
                 }}
               >
-                <h3
+                <span style={{ fontSize: "1.25rem" }}>━━━━━━</span>
+                <span style={{ fontSize: "1.25rem", fontWeight: "500" }}>
+                  OR
+                </span>
+                <span style={{ fontSize: "1.25rem" }}>━━━━━━</span>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="audio/mpeg, audio/wav, audio/mp3, video/mp4, video/webm"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+            </motion.div>
+          ) : !armed && fileUploaded && onFiles ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{
+                padding: "32px",
+                height: "400px",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  marginBottom: "24px",
+                }}
+              >
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOnFiles([]);
+                    setFileUploaded(false);
+                  }}
                   style={{
-                    margin: 0,
-                    fontSize: "1.25rem",
-                    fontWeight: 600,
-                    color: "#2d3748",
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "none",
+                    borderRadius: "12px",
+                    padding: "8px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  <ArrowLeft size={24} color="#fff" />
+                </motion.button>
+                <h2
+                  style={{
+                    color: "#fff",
+                    fontSize: "1.5rem",
+                    fontWeight: "600",
                   }}
                 >
                   Selected Files
-                </h3>
-                <p
+                </h2>
+              </div>
+
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                {onFiles.map((file, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.1)",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "16px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        flex: 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "48px",
+                          height: "48px",
+                          borderRadius: "12px",
+                          background:
+                            "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Volume2 size={24} color="#fff" />
+                      </div>
+                      <div>
+                        <p style={{ color: "#fff", fontWeight: "500" }}>
+                          {file.name}
+                        </p>
+                        <p
+                          style={{
+                            color: "rgba(255, 255, 255, 0.6)",
+                            fontSize: "0.875rem",
+                          }}
+                        >
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile();
+                      }}
+                      style={{
+                        background: "rgba(239, 68, 68, 0.2)",
+                        border: "none",
+                        borderRadius: "12px",
+                        padding: "8px",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      <X size={20} color="#ef4444" />
+                    </motion.button>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          ) : recording ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "24px",
+                height: "100%",
+              }}
+            >
+              <div style={{ textAlign: "center" }}>
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                   style={{
-                    margin: "4px 0 12px",
-                    fontSize: "0.875rem",
-                    color: "#718096",
+                    fontSize: "5rem",
+                    fontWeight: "700",
+                    background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    marginBottom: "16px",
                   }}
                 >
-                  Click the × to remove any file
+                  {formatTime(recordingTime)}
+                </motion.div>
+                <p
+                  style={{
+                    color: "rgba(255, 255, 255, 0.8)",
+                    fontSize: "1.25rem",
+                  }}
+                >
+                  Recording in progress...
                 </p>
+              </div>
+
+              {/* Enhanced Audio Visualization */}
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: "700px",
+                  position: "relative",
+                }}
+              >
+                <canvas
+                  ref={canvasRef}
+                  width="700"
+                  height="180"
+                  style={{
+                    width: "100%",
+                    height: "180px",
+                    borderRadius: "16px",
+                    backgroundColor: "rgba(0, 0, 0, 0.3)",
+                    display: "block",
+                    boxShadow: "0 0 40px rgba(251, 191, 36, 0.2)",
+                  }}
+                />
+
+                {/* Level Meter */}
+                <div
+                  style={{
+                    marginTop: "24px",
+                    background: "rgba(0, 0, 0, 0.3)",
+                    borderRadius: "8px",
+                    padding: "6px",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <motion.div
+                    style={{
+                      height: "12px",
+                      borderRadius: "6px",
+                      background: `linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #ef4444 100%)`,
+                      transformOrigin: "left",
+                    }}
+                    animate={{
+                      scaleX: inputLevel / 100,
+                    }}
+                    transition={{ duration: 0.1 }}
+                  />
+                </div>
+
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
-                    textAlign: "left",
-                    width: "40%",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    padding: "12px",
-                    borderRadius: "12px",
+                    justifyContent: "space-between",
+                    marginTop: "12px",
+                    color: "rgba(255, 255, 255, 0.6)",
+                    fontSize: "1rem",
                   }}
                 >
-                  <div
+                  <span>Input Level</span>
+                  <span
                     style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "8px",
-                      maxHeight: "140px",
-                      overflowY: "auto",
+                      color: getMeterColor(inputLevel),
+                      fontWeight: "600",
                     }}
                   >
-                    {onFiles.map((f, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          padding: "8px 12px",
-                          backgroundColor: "#EDF2F7",
-                          borderRadius: "12px",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                        }}
-                      >
-                        <div
-                          style={{
-                            flex: 1,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            marginRight: "8px",
-                          }}
-                        >
-                          <span
-                            style={{ fontSize: "0.875rem", color: "#2d3748" }}
-                          >
-                            {f.name}
-                          </span>
-                          <span
-                            style={{
-                              marginLeft: "4px",
-                              fontSize: "0.75rem",
-                              color: "#718096",
-                            }}
-                          >
-                            ({(f.size / 1024 / 1024).toFixed(2)} MB)
-                          </span>
-                        </div>
-                        <X
-                          size={16}
-                          style={{ cursor: "pointer", color: "#A0AEC0" }}
-                          onClick={() => removeFile()}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                    {inputLevel < 30
+                      ? "Low"
+                      : inputLevel < 70
+                      ? "Good"
+                      : "High"}{" "}
+                    ({Math.round(inputLevel)}%)
+                  </span>
                 </div>
               </div>
-            </div>
-          </div>
-        ) : recording ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "20px",
-              width: "100%",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "12px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  color: "#2d3748",
-                }}
-              >
-                Recording...
-              </div>
-              <div
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  color: "#2d3748",
-                }}
-              >
-                {formatTime(recordingTime)}
-              </div>
-            </div>
 
-            {/* Audio Visualization */}
-            <div style={{ width: "90%", maxWidth: "500px" }}>
-              <canvas
-                ref={canvasRef}
-                width="500"
-                height="100"
-                style={{
-                  width: "100%",
-                  height: "100px",
-                  borderRadius: "8px",
-                  backgroundColor: "#1a202c",
-                  marginBottom: "12px",
-                  display: "block",
-                  border: "1px solid #4a5568",
-                }}
-              />
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: "4px",
-                }}
-              >
-                <span style={{ fontSize: "0.875rem", color: "#718096" }}>
-                  Input Level
-                </span>
-                <span
-                  style={{
-                    fontSize: "0.875rem",
-                    color: getMeterColor(inputLevel),
-                    fontWeight: 600,
-                  }}
-                >
-                  {inputLevel < 30 ? "Low" : inputLevel < 70 ? "Good" : "High"}{" "}
-                  ({Math.round(inputLevel)}%)
-                </span>
-              </div>
               <p
                 style={{
-                  fontSize: "0.75rem",
-                  color: "#718096",
+                  color: "rgba(255, 255, 255, 0.6)",
+                  fontSize: "1rem",
                   textAlign: "center",
                 }}
               >
-                Speak clearly and maintain consistent volume
+                Speak clearly and maintain consistent volume • Minimum 30
+                seconds required
               </p>
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "12px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: "12px",
-              }}
-            >
-              <ArrowLeft
-                size={24}
-                style={{
-                  color: "#a0aec0",
-                  cursor: "pointer",
+
+              {/* Stop Recording Button */}
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  stopRecording();
                 }}
-                onClick={() => setArmed(false)}
-              />
-              <div
                 style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  color: "#2d3748",
+                  marginTop: "32px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "20px 48px",
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  color: "#fff",
+                  borderRadius: "50px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  boxShadow: "0 8px 24px rgba(239, 68, 68, 0.4)",
+                  transition: "all 0.3s ease",
                 }}
               >
-                Ready to record?
-              </div>
-            </div>
-            <p
+                Stop Recording
+                <StopCircle size={28} />
+              </motion.button>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               style={{
-                fontSize: "0.875rem",
-                color: "#718096",
-                marginTop: "-10px",
-                marginBottom: "20px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "32px",
+                height: "400px",
+                position: "relative",
               }}
             >
-              Click start and allow microphone access when prompted
-            </p>
-          </div>
-        )}
-        {!fileUploaded && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!armed) {
-                setArmed(true);
-                return;
-              }
-              if (recording) {
-                stopRecording();
-              } else {
-                startRecording();
-              }
-            }}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setArmed(false);
+                }}
+                style={{
+                  position: "absolute",
+                  top: "24px",
+                  left: "24px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "8px",
+                  cursor: "pointer",
+                }}
+              >
+                <ArrowLeft size={24} color="#fff" />
+              </motion.button>
+
+              <motion.div
+                animate={{
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  width: "160px",
+                  height: "160px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 0 60px rgba(251, 191, 36, 0.4)",
+                }}
+              >
+                <Microphone size={64} color="#fff" />
+              </motion.div>
+
+              <div style={{ textAlign: "center" }}>
+                <h2
+                  style={{
+                    color: "#fff",
+                    fontSize: "1.75rem",
+                    fontWeight: "600",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Ready to Record
+                </h2>
+                <p
+                  style={{
+                    color: "rgba(255, 255, 255, 0.6)",
+                    fontSize: "1.125rem",
+                  }}
+                >
+                  Click start when you\'re ready • Allow microphone access
+                </p>
+              </div>
+
+              {/* Start Recording Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startRecording();
+                }}
+                style={{
+                  marginTop: "32px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "20px 48px",
+                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                  color: "#fff",
+                  borderRadius: "50px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  boxShadow: "0 8px 24px rgba(251, 191, 36, 0.4)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                Start Recording
+                <Play size={28} />
+              </motion.button>
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* Record Voice Button - shown when not armed */}
+        {!armed && !fileUploaded && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setArmed(true)}
             style={{
+              marginTop: "40px",
               display: "inline-flex",
               alignItems: "center",
-              padding: "10px 20px",
-              backgroundColor: recording ? "#e53e3e" : "#38a169",
+              gap: "12px",
+              padding: "20px 48px",
+              background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
               color: "#fff",
-              borderRadius: "24px",
+              borderRadius: "50px",
               border: "none",
               cursor: "pointer",
-              outline: "none",
-              fontWeight: 600,
-              marginTop: recording ? "20px" : "auto",
+              fontSize: "1.25rem",
+              fontWeight: "600",
+              boxShadow: "0 8px 24px rgba(251, 191, 36, 0.4)",
+              transition: "all 0.3s ease",
             }}
           >
-            {!armed ? (
-              <>
-                Record audio
-                <Microphone style={{ marginLeft: "8px" }} />
-              </>
-            ) : recording ? (
-              <>
-                Stop Recording
-                <StopCircle size={24} style={{ marginLeft: "8px" }} />
-              </>
-            ) : (
-              <>
-                Start Recording
-                <Play size={24} style={{ marginLeft: "8px" }} />
-              </>
-            )}
-          </button>
+            Record Voice
+            <Microphone size={28} />
+          </motion.button>
+        )}
+
+        {/* Next Button */}
+        {fileUploaded && !recording && !armed && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleNext}
+            disabled={onFiles.length === 0}
+            style={{
+              marginTop: "40px",
+              padding: "16px 48px",
+              background:
+                onFiles.length > 0
+                  ? "linear-gradient(135deg, #fbbf24, #f59e0b)"
+                  : "rgba(255, 255, 255, 0.1)",
+              color: onFiles.length > 0 ? "#fff" : "rgba(255, 255, 255, 0.3)",
+              borderRadius: "50px",
+              fontWeight: "600",
+              fontSize: "1.125rem",
+              border: "none",
+              cursor: onFiles.length > 0 ? "pointer" : "not-allowed",
+              boxShadow:
+                onFiles.length > 0
+                  ? "0 8px 24px rgba(251, 191, 36, 0.4)"
+                  : "none",
+              transition: "all 0.3s ease",
+            }}
+          >
+            Continue →
+          </motion.button>
         )}
       </div>
-
-      {/* Footer Controls */}
-      <div
-        style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}
-      >
-        <p
-          style={{
-            color: "#718096",
-            fontSize: "0.875rem",
-            margin: 0,
-            fontStyle: "italic",
-          }}
-        >
-          Recording must be 30 seconds minimum
-        </p>
-      </div>
-      <button
-        onClick={(e) => handleNext(e)}
-        disabled={onFiles.length === 0} // see note below
-        style={{
-          padding: "12px 24px", // horizontal padding makes the button wide enough
-          backgroundColor: onFiles.length != 0 ? "#3182ce" : "#cbd5e0",
-          color: onFiles.length != 0 ? "#fff" : "#718096",
-          borderRadius: "24px",
-          fontWeight: 600,
-          border: "none",
-          cursor: onFiles.length != 0 ? "pointer" : "not-allowed",
-          transition: "background-color 0.2s",
-        }}
-      >
-        Next
-      </button>
-
-      {/* <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        background: 'linear-gradient(135deg, #e2e8f0, #f9fafb)',
-        padding: '24px',
-      }}
-    > */}
 
       {/* Modal */}
       <AnimatePresence>
@@ -1305,11 +1322,12 @@ export default function VoiceRecorder() {
               left: 0,
               width: "100%",
               height: "100%",
-              backgroundColor: "rgba(0,0,0,0.5)",
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               zIndex: 10,
+              backdropFilter: "blur(10px)",
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1318,149 +1336,185 @@ export default function VoiceRecorder() {
             <motion.div
               style={{
                 width: "90%",
-                maxWidth: recordingError ? "500px" : "400px",
-                backgroundColor: "#fff",
-                borderRadius: "16px",
-                padding: "32px",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                maxWidth: recordingError ? "500px" : "500px",
+                backgroundColor: "#1e1b4b",
+                background: "linear-gradient(135deg, #1e1b4b, #312e81)",
+                borderRadius: "24px",
+                padding: "40px",
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
                 textAlign: "center",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
               }}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
             >
-              <div
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  setShowModal(false);
+                  setRecordingError("");
+                }}
                 style={{
-                  marginBottom: "16px",
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "8px",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
                 }}
               >
-                <ArrowLeft
-                  style={{
-                    width: "20%",
-                    backgroundColor: "white",
-                    alignSelf: "flex-start",
-                    color: "white",
-                  }}
-                />
+                <X size={24} color="rgba(255, 255, 255, 0.6)" />
+              </motion.button>
+
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: passed
+                    ? "linear-gradient(135deg, #10b981, #059669)"
+                    : "linear-gradient(135deg, #ef4444, #dc2626)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 24px",
+                  boxShadow: `0 0 40px ${
+                    passed
+                      ? "rgba(16, 185, 129, 0.4)"
+                      : "rgba(239, 68, 68, 0.4)"
+                  }`,
+                }}
+              >
                 {passed ? (
-                  <CheckCircle
-                    size={48}
-                    style={{ color: "#38a169", width: "60%" }}
-                  />
+                  <CheckCircle size={40} color="#fff" />
                 ) : (
-                  <AlertCircle
-                    size={48}
-                    style={{ color: "#e53e3e", width: "60%" }}
-                  />
+                  <AlertCircle size={40} color="#fff" />
                 )}
-                <X
-                  onClick={() => {
-                    setShowModal(false);
-                    setRecordingError("");
-                  }}
-                  size={24}
-                  style={{
-                    cursor: "pointer",
-                    color: "#a0aec0",
-                    width: "20%",
-                    alignSelf: "flex-start",
-                  }}
-                />
-              </div>
+              </motion.div>
+
               <h2
                 style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  color: "#2d3748",
-                  marginBottom: "12px",
+                  fontSize: "1.75rem",
+                  fontWeight: "700",
+                  color: "#fff",
+                  marginBottom: "16px",
                 }}
               >
-                {passed ? "Select Registration Type" : "Recording Failed"}
+                {passed ? "Choose Registration Type" : "Recording Failed"}
               </h2>
               <p
                 style={{
-                  color: "#4a5568",
-                  marginBottom: "24px",
+                  color: "rgba(255, 255, 255, 0.8)",
+                  marginBottom: "32px",
                   whiteSpace: "pre-line",
+                  lineHeight: "1.6",
                 }}
               >
                 {passed
-                  ? "Your recording is saved! Choose how you'd like to register:"
-                  : recordingError || "Recording failed. Please try again."}
+                  ? "Your voice has been captured successfully! Select how you want to register your voice IP:"
+                  : recordingError || "Something went wrong. Please try again."}
               </p>
+
               <div
                 style={{
                   display: "flex",
-                  gap: "12px",
+                  gap: "16px",
                   justifyContent: "center",
                 }}
               >
                 {passed ? (
                   <>
                     <motion.button
+                      whileHover={{
+                        scale: 1.05,
+                        boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+                      }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => handleSelection("individual")}
-                      whileHover={{ scale: 1.05 }}
                       style={{
                         flex: 1,
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
-                        justifyContent: "center",
-                        padding: "12px 0",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                        cursor: "pointer",
+                        gap: "12px",
+                        padding: "24px",
+                        borderRadius: "16px",
+                        background: "linear-gradient(135deg, #3b82f6, #2563eb)",
                         border: "none",
-                        outline: "none",
+                        cursor: "pointer",
                         color: "#fff",
-                        backgroundColor: "#3182ce",
+                        transition: "all 0.3s ease",
                       }}
                     >
-                      <User style={{ marginRight: "8px" }} /> Individual
+                      <User size={32} />
+                      <span style={{ fontSize: "1.125rem", fontWeight: "600" }}>
+                        Individual
+                      </span>
+                      <span style={{ fontSize: "0.875rem", opacity: 0.8 }}>
+                        Personal use
+                      </span>
                     </motion.button>
 
                     <motion.button
+                      whileHover={{
+                        scale: 1.05,
+                        boxShadow: "0 8px 24px rgba(16, 185, 129, 0.4)",
+                      }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => handleSelection("company")}
-                      whileHover={{ scale: 1.05 }}
                       style={{
                         flex: 1,
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
-                        justifyContent: "center",
-                        padding: "12px 0",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                        cursor: "pointer",
+                        gap: "12px",
+                        padding: "24px",
+                        borderRadius: "16px",
+                        background: "linear-gradient(135deg, #10b981, #059669)",
                         border: "none",
-                        outline: "none",
+                        cursor: "pointer",
                         color: "#fff",
-                        backgroundColor: "#2f855a",
+                        transition: "all 0.3s ease",
                       }}
                     >
-                      <Building2 style={{ marginRight: "8px" }} /> Company
+                      <Building2 size={32} />
+                      <span style={{ fontSize: "1.125rem", fontWeight: "600" }}>
+                        Company
+                      </span>
+                      <span style={{ fontSize: "0.875rem", opacity: 0.8 }}>
+                        Business use
+                      </span>
                     </motion.button>
                   </>
                 ) : (
                   <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       setShowModal(false);
                       setArmed(true);
                       setRecordingError("");
                     }}
-                    whileHover={{ scale: 1.05 }}
                     style={{
-                      padding: "12px 24px",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                      cursor: "pointer",
+                      padding: "14px 32px",
+                      borderRadius: "50px",
+                      background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
                       border: "none",
-                      outline: "none",
+                      cursor: "pointer",
                       color: "#fff",
-                      backgroundColor: "#2f855a",
+                      fontWeight: "600",
+                      fontSize: "1.125rem",
+                      boxShadow: "0 8px 24px rgba(251, 191, 36, 0.4)",
+                      transition: "all 0.3s ease",
                     }}
                   >
                     Try Again
