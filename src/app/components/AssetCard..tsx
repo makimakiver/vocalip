@@ -14,14 +14,20 @@ import {
   Mic,
   Loader2,
   MoreVertical,
+  Lock,
+  Unlock,
 } from "lucide-react";
-
 type AssetCardProps = {
   assetId: string;
   creator: string;
+  isOwner?: boolean; // New prop to show privacy toggle only for owners
 };
 
-export default function AssetCard({ assetId, creator }: AssetCardProps) {
+export default function AssetCard({
+  assetId,
+  creator,
+  isOwner = false,
+}: AssetCardProps) {
   type AssetDataType = {
     nftMetadata?: {
       imageUrl?: string;
@@ -59,6 +65,10 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
   const [showModal, setShowModal] = useState(false);
   const [passed, setPassed] = useState(false);
   const [disputeLoading, setDisputeLoading] = useState(false);
+  // New state for privacy toggle
+  const [isPublic, setIsPublic] = useState(true);
+  const [privacyLoading, setPrivacyLoading] = useState(false);
+
   useEffect(() => {
     if (disputeType !== DisputeType.None) {
       setDisputeButton(true);
@@ -98,6 +108,22 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
         meta = null;
       }
       setMetaData(meta);
+
+      // Load privacy state from API
+      try {
+        const privacyRes = await fetch(
+          `/api/update-voice-privacy?assetId=${assetId}`
+        );
+        if (privacyRes.ok) {
+          const privacyData = await privacyRes.json();
+          setIsPublic(privacyData.isPublic);
+        }
+      } catch (error) {
+        console.error("Error loading privacy state:", error);
+        // Default to public if error
+        setIsPublic(true);
+      }
+
       setLoading(false);
     };
     fetchAsset();
@@ -127,6 +153,42 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
   const handleAudioEnded = () => {
     setAudioPlaying(false);
     if (audioRef.current) audioRef.current.currentTime = 0;
+  };
+
+  // Privacy toggle handler
+  const handlePrivacyToggle = async () => {
+    setPrivacyLoading(true);
+    try {
+      const newPrivacyState = !isPublic;
+
+      // Call the API to update privacy
+      const res = await fetch("/api/update-voice-privacy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          assetId,
+          isPublic: newPrivacyState,
+          userAddress: creator, // Pass the creator address for future authentication
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update privacy");
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setIsPublic(newPrivacyState);
+      } else {
+        throw new Error(data.error || "Failed to update privacy");
+      }
+    } catch (error) {
+      console.error("Error updating privacy:", error);
+      alert("Failed to update privacy settings");
+    }
+    setPrivacyLoading(false);
   };
 
   if (loading || !assetData || !metaData) {
@@ -212,6 +274,48 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
           onPause={handleAudioEnded}
           onEnded={handleAudioEnded}
         />
+
+        {/* Privacy Toggle for owners */}
+        {isOwner && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handlePrivacyToggle}
+            disabled={privacyLoading}
+            style={{
+              marginTop: "12px",
+              width: "100%",
+              padding: "10px",
+              borderRadius: "8px",
+              border: "none",
+              backgroundColor: isPublic
+                ? "rgba(239, 68, 68, 0.1)"
+                : "rgba(16, 185, 129, 0.1)",
+              color: isPublic ? "#ef4444" : "#10b981",
+              fontWeight: "600",
+              cursor: privacyLoading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              transition: "all 0.3s ease",
+            }}
+          >
+            {privacyLoading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : isPublic ? (
+              <>
+                <Lock size={18} />
+                Make Private
+              </>
+            ) : (
+              <>
+                <Unlock size={18} />
+                Make Public
+              </>
+            )}
+          </motion.button>
+        )}
       </div>
       <MoreVertical
         className="asset-card-dots"
@@ -423,7 +527,7 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
                       color: "#555",
                     }}
                   >
-                    The content has been used or published without the creator’s
+                    The content has been used or published without the creator's
                     permission or outside agreed terms.
                   </p>
                 </div>
@@ -533,7 +637,7 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
                       color: "#555",
                     }}
                   >
-                    The content has been used or published without the creator’s
+                    The content has been used or published without the creator's
                     permission or outside agreed terms.
                   </p>
                 </div>
@@ -586,7 +690,7 @@ export default function AssetCard({ assetId, creator }: AssetCardProps) {
                       color: "#555",
                     }}
                   >
-                    The content has been used or published without the creator’s
+                    The content has been used or published without the creator's
                     permission or outside agreed terms.
                   </p>
                 </div>

@@ -343,7 +343,11 @@ export default function MyVoicesPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
               >
-                <AssetCard assetId={voice[1]} creator={voice[0]} />
+                <AssetCard
+                  assetId={voice[1]}
+                  creator={voice[0]}
+                  isOwner={true}
+                />
               </motion.div>
             ))}
           </motion.div>
