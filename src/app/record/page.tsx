@@ -33,12 +33,21 @@ export default function VoiceRecorder() {
   const chunksRef = useRef<BlobPart[]>([]);
   const audioContextRef = useRef<AudioContext>();
   const router = useRouter();
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setDragging] = useState(false);
   const [onFiles, setOnFiles] = useState<File[]>([]);
   const [fileUploaded, setFileUploaded] = useState(false);
-  const [inputLevel, setInputLevel] = useState(0); // 0–255 meter
+  const [inputLevel, setInputLevel] = useState(0); // 0–100 meter
   const audioAnalyserRef = useRef<AnalyserNode | null>(null); // reference to the analyser
+  const animationFrameRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null); // THIS WAS MISSING
+  const [isVisualizationRunning, setIsVisualizationRunning] = useState(false);
+  const [frameCount, setFrameCount] = useState(0);
+  const [recordingError, setRecordingError] = useState<string>("");
+  const isRecordingRef = useRef(false); // Add ref to track recording state
+  const waveformDataRef = useRef<number[]>([]); // Store waveform history
+
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60)
       .toString()
@@ -50,7 +59,11 @@ export default function VoiceRecorder() {
   /**
    * Convert any Blob (e.g. from MediaRecorder) into a base64 string
    */
-  const triggerFileSelect = () => fileInputRef.current?.click();
+  const triggerFileSelect = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
   const removeFile = () => {
     setOnFiles((prev) => {
       const newFiles = prev.slice(0, -1);
@@ -141,49 +154,447 @@ export default function VoiceRecorder() {
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
+      isRecordingRef.current = false; // Set ref to false on cleanup
       // Clean up audio context and recorder on unmount
       if (audioContextRef.current) audioContextRef.current.close();
       if (recorderRef.current && recorderRef.current.state !== "inactive") {
         recorderRef.current.stop();
       }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
     };
   }, []);
 
+  // Test visualization without audio
+  const drawTestBars = () => {
+    if (!canvasRef || !canvasRef.current || !isVisualizationRunning) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.fillStyle = "#1a202c";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw animated bars
+    const time = Date.now() / 500;
+    const barCount = 30;
+    const barWidth = canvas.width / barCount;
+
+    for (let i = 0; i < barCount; i++) {
+      const height = Math.abs(Math.sin(time + i * 0.5)) * canvas.height * 0.8;
+      const hue = (i * 10 + time * 50) % 360;
+
+      ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+      ctx.fillRect(
+        i * barWidth + 1,
+        canvas.height - height,
+        barWidth - 2,
+        height
+      );
+    }
+
+    // Show message
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "14px Arial";
+    ctx.fillText("Test visualization - Microphone not connected", 10, 30);
+
+    animationFrameRef.current = requestAnimationFrame(drawTestBars);
+  };
+
+  // Super simple visualization for debugging
+  const drawSimpleVisualization = () => {
+    if (frameCount < 5) {
+      console.log(`drawSimpleVisualization frame ${frameCount}`);
+      setFrameCount((prev) => prev + 1);
+    }
+
+    if (!isVisualizationRunning) {
+      console.log("Visualization stopped");
+      return;
+    }
+
+    if (!canvasRef || !canvasRef.current) {
+      console.log("No canvas ref");
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.log("No canvas context");
+      return;
+    }
+
+    // Clear canvas with visible color to ensure it's rendering
+    ctx.fillStyle = "#2a2a2a";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // If we have an analyser, try to get some data
+    if (audioAnalyserRef.current) {
+      const analyser = audioAnalyserRef.current;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(dataArray);
+
+      // Calculate simple average
+      let sum = 0;
+      for (let i = 0; i < Math.min(dataArray.length, 50); i++) {
+        sum += dataArray[i];
+      }
+      const avg = sum / 50;
+
+      // Update level
+      setInputLevel(Math.min(100, avg));
+
+      // Draw a simple meter
+      const meterWidth = (avg / 255) * canvas.width;
+      ctx.fillStyle = avg > 50 ? "#38a169" : "#ef4444";
+      ctx.fillRect(0, 40, meterWidth, 20);
+
+      // Draw some text to show it's working
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "14px Arial";
+      ctx.fillText(`Audio Level: ${Math.round(avg)}`, 10, 30);
+
+      // Draw frame counter to show it's animating
+      ctx.fillText(`Frame: ${Date.now() % 1000}`, 10, 80);
+
+      // Debug: show first few data values
+      if (frameCount < 5) {
+        console.log("Data sample:", dataArray.slice(0, 10));
+      }
+    } else {
+      // No analyser - just draw test pattern
+      ctx.fillStyle = "#ff0000";
+      ctx.fillRect(0, 0, 100, 20);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "14px Arial";
+      ctx.fillText("No audio analyser!", 10, 50);
+    }
+
+    animationFrameRef.current = requestAnimationFrame(drawSimpleVisualization);
+  };
+
+  // Simple test visualization to ensure canvas works
+  const drawTestVisualization = () => {
+    console.log("drawTestVisualization called");
+    if (!canvasRef.current) {
+      console.log("No canvas ref");
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.log("No canvas context");
+      return;
+    }
+
+    // Clear canvas
+    ctx.fillStyle = "#1a202c";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw animated test bars
+    const time = Date.now() / 1000;
+    ctx.fillStyle = "#38a169";
+
+    for (let i = 0; i < 10; i++) {
+      const height = Math.abs(Math.sin(time + i)) * canvas.height * 0.8;
+      ctx.fillRect(i * 50, canvas.height - height, 40, height);
+    }
+
+    if (recording) {
+      requestAnimationFrame(drawTestVisualization);
+    }
+  };
+
+  // Scrolling waveform visualization
+  const drawVolumeVisualization = () => {
+    if (
+      !canvasRef ||
+      !canvasRef.current ||
+      !audioAnalyserRef.current ||
+      !isRecordingRef.current
+    ) {
+      console.log("Stopping visualization - missing requirements");
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const canvasCtx = canvas.getContext("2d");
+    if (!canvasCtx) {
+      console.error("No canvas context");
+      return;
+    }
+
+    try {
+      const analyser = audioAnalyserRef.current;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      // Get time domain data for waveform
+      analyser.getByteTimeDomainData(dataArray);
+
+      // Calculate average volume from frequency data for the meter
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / dataArray.length;
+      const normalizedLevel = Math.min(100, average);
+      setInputLevel(normalizedLevel);
+
+      // Get waveform data
+      analyser.getByteTimeDomainData(dataArray);
+
+      // Find the loudest sample in this frame
+      let max = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const sample = Math.abs(dataArray[i] - 128);
+        if (sample > max) max = sample;
+      }
+
+      // Add to waveform history
+      waveformDataRef.current.push(max);
+
+      // Keep only the last N samples (based on canvas width)
+      const maxSamples = Math.floor(canvas.width / 3); // 3 pixels per sample
+      if (waveformDataRef.current.length > maxSamples) {
+        waveformDataRef.current = waveformDataRef.current.slice(-maxSamples);
+      }
+
+      // Clear canvas with gradient background
+      const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#0f172a");
+      gradient.addColorStop(1, "#1e293b");
+      canvasCtx.fillStyle = gradient;
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid lines for visual reference
+      canvasCtx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+      canvasCtx.lineWidth = 1;
+      for (let i = 0; i < canvas.height; i += 20) {
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(0, i);
+        canvasCtx.lineTo(canvas.width, i);
+        canvasCtx.stroke();
+      }
+
+      // Draw the waveform
+      canvasCtx.beginPath();
+      canvasCtx.strokeStyle =
+        normalizedLevel < 30
+          ? "#10b981"
+          : normalizedLevel < 70
+          ? "#f59e0b"
+          : "#ef4444";
+      canvasCtx.lineWidth = 2;
+      canvasCtx.shadowBlur = 10;
+      canvasCtx.shadowColor = canvasCtx.strokeStyle;
+
+      const centerY = canvas.height / 2;
+
+      for (let i = 0; i < waveformDataRef.current.length; i++) {
+        const x = canvas.width - (waveformDataRef.current.length - i) * 3;
+        const amplitude =
+          (waveformDataRef.current[i] / 128) * (canvas.height * 0.4);
+
+        if (i === 0) {
+          canvasCtx.moveTo(x, centerY);
+        }
+
+        // Draw both positive and negative sides of the waveform
+        const y1 = centerY - amplitude;
+        const y2 = centerY + amplitude;
+
+        canvasCtx.lineTo(x, y1);
+        canvasCtx.lineTo(x, y2);
+        canvasCtx.lineTo(x, centerY);
+      }
+
+      canvasCtx.stroke();
+
+      // Draw center line
+      canvasCtx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      canvasCtx.lineWidth = 1;
+      canvasCtx.shadowBlur = 0;
+      canvasCtx.setLineDash([5, 5]);
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(0, centerY);
+      canvasCtx.lineTo(canvas.width, centerY);
+      canvasCtx.stroke();
+      canvasCtx.setLineDash([]);
+
+      // Draw level indicator and time
+      canvasCtx.fillStyle = "#ffffff";
+      canvasCtx.font = "12px Arial";
+      canvasCtx.shadowBlur = 0;
+      canvasCtx.fillText(`Level: ${Math.round(normalizedLevel)}%`, 10, 20);
+
+      // Add a recording indicator
+      canvasCtx.fillStyle = "#ef4444";
+      canvasCtx.beginPath();
+      canvasCtx.arc(canvas.width - 20, 20, 5, 0, Math.PI * 2);
+      canvasCtx.fill();
+
+      // Pulse effect for recording indicator
+      const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+      canvasCtx.globalAlpha = pulse;
+      canvasCtx.beginPath();
+      canvasCtx.arc(canvas.width - 20, 20, 8, 0, Math.PI * 2);
+      canvasCtx.fill();
+      canvasCtx.globalAlpha = 1;
+    } catch (error) {
+      console.error("Error in visualization:", error);
+    }
+
+    if (isRecordingRef.current) {
+      animationFrameRef.current = requestAnimationFrame(
+        drawVolumeVisualization
+      );
+    }
+  };
+
   async function startRecording() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        sampleRate: { ideal: 48000 },
-        sampleSize: { ideal: 24 },
-        channelCount: { ideal: 1 },
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-      },
-    });
+    try {
+      // Check if we're on HTTPS or localhost
+      if (
+        window.location.protocol !== "https:" &&
+        window.location.hostname !== "localhost"
+      ) {
+        setRecordingError(
+          "Microphone access requires HTTPS.\n\nPlease access this site using HTTPS or run it on localhost."
+        );
+        setPassed(false);
+        setShowModal(true);
+        setRecording(false);
+        setArmed(false);
+        isRecordingRef.current = false; // Set ref to false
+        return;
+      }
 
-    const mr = new MediaRecorder(stream, {
-      mimeType: "audio/webm;codecs=opus",
-      audioBitsPerSecond: 256_000,
-    });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: { ideal: 48000 },
+          sampleSize: { ideal: 24 },
+          channelCount: { ideal: 1 },
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
 
-    recorderRef.current = mr;
-    chunksRef.current = [];
+      streamRef.current = stream;
 
-    mr.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data);
-    };
-    // emit new dataavailable every 200ms for smoother real-time streaming
-    mr.start(200);
-    setRecording(true);
-    // reset & start counting
-    setRecordingTime(0);
-    timerRef.current = setInterval(() => {
-      setRecordingTime((t) => t + 1);
-    }, 1000);
+      // Set up audio analysis for visualization
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+      }
+
+      // Resume audio context if it's suspended
+      if (audioContextRef.current.state === "suspended") {
+        await audioContextRef.current.resume();
+        console.log("Audio context resumed");
+      }
+
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      const analyser = audioContextRef.current.createAnalyser();
+      analyser.fftSize = 256; // Smaller for better performance
+      analyser.smoothingTimeConstant = 0.3; // Lower for more responsive waveform
+      source.connect(analyser);
+      audioAnalyserRef.current = analyser;
+
+      console.log("Audio analyser set up successfully");
+
+      const mr = new MediaRecorder(stream, {
+        mimeType: "audio/webm;codecs=opus",
+        audioBitsPerSecond: 256_000,
+      });
+
+      recorderRef.current = mr;
+      chunksRef.current = [];
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      // emit new dataavailable every 200ms for smoother real-time streaming
+      mr.start(200);
+      setRecording(true);
+      isRecordingRef.current = true; // Set ref to true
+      waveformDataRef.current = []; // Clear waveform history
+      setRecordingError(""); // Clear any previous errors
+      // reset & start counting
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => {
+        setRecordingTime((t) => t + 1);
+      }, 1000);
+
+      // Start visualization after a small delay to ensure canvas is ready
+      setTimeout(() => {
+        console.log("Starting visualization...");
+        if (canvasRef && canvasRef.current) {
+          console.log("Canvas element:", canvasRef.current);
+          console.log(
+            "Canvas dimensions:",
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
+        } else {
+          console.log("Canvas ref not ready yet");
+        }
+        console.log("Analyser:", audioAnalyserRef?.current);
+
+        setIsVisualizationRunning(true);
+        setFrameCount(0);
+        // Start the visualization loop directly without relying on state
+        drawVolumeVisualization();
+      }, 100);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+
+      // More specific error handling
+      let errorMessage = "";
+      if (error instanceof DOMException) {
+        if (
+          error.name === "NotAllowedError" ||
+          error.name === "PermissionDeniedError"
+        ) {
+          errorMessage =
+            "Microphone access denied.\n\nTo fix this:\n1. Click the lock/info icon in your address bar\n2. Find 'Microphone' settings\n3. Change to 'Allow'\n4. Refresh the page and try again";
+        } else if (error.name === "NotFoundError") {
+          errorMessage =
+            "No microphone found. Please connect a microphone and try again.";
+        } else if (error.name === "NotReadableError") {
+          errorMessage = "Microphone is already in use by another application.";
+        } else {
+          errorMessage = "Error accessing microphone: " + error.message;
+        }
+      } else {
+        errorMessage = "Error starting recording. Please try again.";
+      }
+      setRecordingError(errorMessage);
+      setPassed(false);
+      setShowModal(true);
+
+      // Reset states on error
+      setRecording(false);
+      setArmed(false);
+      isRecordingRef.current = false; // Set ref to false
+      setIsVisualizationRunning(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
   }
 
   const handleNext = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    setRecordingError(""); // Clear any previous errors
     const file = onFiles[0];
     console.log("File", file);
     if (file) {
@@ -206,10 +617,16 @@ export default function VoiceRecorder() {
         setPassed(true);
       } catch (error) {
         console.error("Upload error:", error);
+        setRecordingError(
+          "Failed to upload the file. Please check your connection and try again."
+        );
         setPassed(false);
         setShowModal(true);
       }
     } else {
+      setRecordingError(
+        "No file selected. Please select an audio file to upload."
+      );
       setPassed(false);
       setShowModal(true);
     }
@@ -217,18 +634,38 @@ export default function VoiceRecorder() {
   };
 
   const stopRecording = async () => {
+    // Stop visualization
+    setIsVisualizationRunning(false);
+    isRecordingRef.current = false; // Set ref to false
+    waveformDataRef.current = []; // Clear waveform data
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    setInputLevel(0);
+
     // stop your MediaRecorder…
-    console.log("Timer", timerRef.current);
+    console.log("Recording time:", recordingTime);
 
     if (recordingTime < 30) {
-      console.log("Recording is less than 30 seconds");
+      console.log(
+        `Recording is less than 30 seconds (was ${recordingTime} seconds)`
+      );
       setRecording(false);
+      isRecordingRef.current = false; // Set ref to false
       setPassed(false);
+      setRecordingError(
+        `Recording too short. You recorded ${recordingTime} seconds, but 30 seconds are required.`
+      );
       setShowModal(true);
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      setIsVisualizationRunning(false);
       return;
     }
 
@@ -290,19 +727,34 @@ export default function VoiceRecorder() {
         setShowModal(true);
       } catch (error) {
         console.error("Recording upload error:", error);
+        setRecordingError(
+          "Failed to upload the recording. Please check your connection and try again."
+        );
         setPassed(false);
         setShowModal(true);
       }
 
       setRecording(false);
+      isRecordingRef.current = false; // Set ref to false
     };
     recorderRef.current.stop();
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
     setRecording(false);
+    isRecordingRef.current = false; // Set ref to false
   };
 
   const handleSelection = (type: "individual" | "company") => {
     if (!currentCid) return;
     router.push(`/registration/${currentCid}/${type}`);
+  };
+
+  // Get color for level
+  const getMeterColor = (level: number) => {
+    if (level < 30) return "#38a169"; // Green
+    if (level < 70) return "#f59e0b"; // Yellow
+    return "#ef4444"; // Red
   };
 
   return (
@@ -432,7 +884,7 @@ export default function VoiceRecorder() {
           backgroundColor: isDragging ? "#eff6ff" : "#fff",
           marginBottom: "16px",
           minWidth: "600px",
-          height: "200px",
+          height: recording ? "320px" : "200px",
           transition: "all 0.2s ease",
         }}
       >
@@ -618,62 +1070,137 @@ export default function VoiceRecorder() {
           <div
             style={{
               display: "flex",
-              flexDirection: "row",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: "12px",
+              gap: "20px",
+              width: "100%",
             }}
           >
             <div
               style={{
-                fontSize: "1.5rem",
-                fontWeight: 600,
-                color: "#2d3748",
-                marginBottom: "16px",
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "12px",
               }}
             >
-              Recording...
+              <div
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
+                  color: "#2d3748",
+                }}
+              >
+                Recording...
+              </div>
+              <div
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
+                  color: "#2d3748",
+                }}
+              >
+                {formatTime(recordingTime)}
+              </div>
             </div>
-            <div
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: 600,
-                color: "#2d3748",
-                marginBottom: "16px",
-              }}
-            >
-              {recordingTime} seconds
+
+            {/* Audio Visualization */}
+            <div style={{ width: "90%", maxWidth: "500px" }}>
+              <canvas
+                ref={canvasRef}
+                width="500"
+                height="100"
+                style={{
+                  width: "100%",
+                  height: "100px",
+                  borderRadius: "8px",
+                  backgroundColor: "#1a202c",
+                  marginBottom: "12px",
+                  display: "block",
+                  border: "1px solid #4a5568",
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "4px",
+                }}
+              >
+                <span style={{ fontSize: "0.875rem", color: "#718096" }}>
+                  Input Level
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.875rem",
+                    color: getMeterColor(inputLevel),
+                    fontWeight: 600,
+                  }}
+                >
+                  {inputLevel < 30 ? "Low" : inputLevel < 70 ? "Good" : "High"}{" "}
+                  ({Math.round(inputLevel)}%)
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#718096",
+                  textAlign: "center",
+                }}
+              >
+                Speak clearly and maintain consistent volume
+              </p>
             </div>
           </div>
         ) : (
           <div
             style={{
               display: "flex",
-              flexDirection: "row",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               gap: "12px",
             }}
           >
-            <ArrowLeft
-              size={24}
-              style={{
-                color: "#a0aec0",
-                marginBottom: "12px",
-                cursor: "pointer",
-              }}
-              onClick={() => setArmed(false)}
-            />
             <div
               style={{
-                fontSize: "1.5rem",
-                fontWeight: 600,
-                color: "#2d3748",
-                marginBottom: "16px",
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: "12px",
               }}
             >
-              Uploading files?
+              <ArrowLeft
+                size={24}
+                style={{
+                  color: "#a0aec0",
+                  cursor: "pointer",
+                }}
+                onClick={() => setArmed(false)}
+              />
+              <div
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
+                  color: "#2d3748",
+                }}
+              >
+                Ready to record?
+              </div>
             </div>
+            <p
+              style={{
+                fontSize: "0.875rem",
+                color: "#718096",
+                marginTop: "-10px",
+                marginBottom: "20px",
+              }}
+            >
+              Click start and allow microphone access when prompted
+            </p>
           </div>
         )}
         {!fileUploaded && (
@@ -701,7 +1228,7 @@ export default function VoiceRecorder() {
               cursor: "pointer",
               outline: "none",
               fontWeight: 600,
-              marginTop: "auto",
+              marginTop: recording ? "20px" : "auto",
             }}
           >
             {!armed ? (
@@ -711,10 +1238,12 @@ export default function VoiceRecorder() {
               </>
             ) : recording ? (
               <>
+                Stop Recording
                 <StopCircle size={24} style={{ marginLeft: "8px" }} />
               </>
             ) : (
               <>
+                Start Recording
                 <Play size={24} style={{ marginLeft: "8px" }} />
               </>
             )}
@@ -726,12 +1255,17 @@ export default function VoiceRecorder() {
       <div
         style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}
       >
-        <input type="checkbox" id="tenSec" style={{ marginRight: "8px" }} />
+        <input
+          type="checkbox"
+          id="tenSec"
+          style={{ marginRight: "8px" }}
+          defaultChecked
+        />
         <label
           htmlFor="tenSec"
           style={{ color: "#4a5568", fontSize: "0.875rem" }}
         >
-          10 seconds of audio required
+          30 seconds of audio required
         </label>
       </div>
       <button
@@ -786,7 +1320,7 @@ export default function VoiceRecorder() {
             <motion.div
               style={{
                 width: "90%",
-                maxWidth: "400px",
+                maxWidth: recordingError ? "500px" : "400px",
                 backgroundColor: "#fff",
                 borderRadius: "16px",
                 padding: "32px",
@@ -827,7 +1361,10 @@ export default function VoiceRecorder() {
                   />
                 )}
                 <X
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false);
+                    setRecordingError("");
+                  }}
                   size={24}
                   style={{
                     cursor: "pointer",
@@ -845,12 +1382,18 @@ export default function VoiceRecorder() {
                   marginBottom: "12px",
                 }}
               >
-                {passed ? "Select Registration Type" : "Invalid Recording"}
+                {passed ? "Select Registration Type" : "Recording Failed"}
               </h2>
-              <p style={{ color: "#4a5568", marginBottom: "24px" }}>
+              <p
+                style={{
+                  color: "#4a5568",
+                  marginBottom: "24px",
+                  whiteSpace: "pre-line",
+                }}
+              >
                 {passed
                   ? "Your recording is saved! Choose how you'd like to register:"
-                  : "Invalid recording. Please try again."}
+                  : recordingError || "Recording failed. Please try again."}
               </p>
               <div
                 style={{
@@ -879,7 +1422,7 @@ export default function VoiceRecorder() {
                         backgroundColor: "#3182ce",
                       }}
                     >
-                      <Microphone style={{ marginRight: "8px" }} /> Individual
+                      <User style={{ marginRight: "8px" }} /> Individual
                     </motion.button>
 
                     <motion.button
@@ -900,14 +1443,15 @@ export default function VoiceRecorder() {
                         backgroundColor: "#2f855a",
                       }}
                     >
-                      <Microphone style={{ marginRight: "8px" }} /> Company
+                      <Building2 style={{ marginRight: "8px" }} /> Company
                     </motion.button>
                   </>
                 ) : (
                   <motion.button
                     onClick={() => {
                       setShowModal(false);
-                      startRecording();
+                      setArmed(true);
+                      setRecordingError("");
                     }}
                     whileHover={{ scale: 1.05 }}
                     style={{
