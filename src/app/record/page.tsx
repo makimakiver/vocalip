@@ -18,6 +18,8 @@ import {
   Volume2,
   Shield,
   Headphones,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 // import * as Select from '@radix-ui/react-select'
 // import SelectDemo from '../components/Select'
@@ -531,9 +533,10 @@ export default function VoiceRecorder() {
     isRecordingRef.current = false; // Set ref to false
   };
 
-  const handleSelection = (type: "individual" | "company") => {
+  // Updated function to go directly to registration
+  const handleContinueToRegistration = () => {
     if (!currentCid) return;
-    router.push(`/registration/${currentCid}/${type}`);
+    router.push(`/registration/${currentCid}/individual`);
   };
 
   // Get color for level
@@ -1321,7 +1324,7 @@ export default function VoiceRecorder() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Updated Modal - No more individual/company selection */}
       <AnimatePresence>
         {showModal && (
           <motion.div
@@ -1418,7 +1421,7 @@ export default function VoiceRecorder() {
                   marginBottom: "16px",
                 }}
               >
-                {passed ? "Choose Registration Type" : "Recording Failed"}
+                {passed ? "Voice Captured Successfully!" : "Recording Failed"}
               </h2>
               <p
                 style={{
@@ -1429,7 +1432,7 @@ export default function VoiceRecorder() {
                 }}
               >
                 {passed
-                  ? "Your voice has been captured successfully! Select how you want to register your voice IP:"
+                  ? "Your voice has been processed and is ready for registration. Click continue to set up your voice IP asset."
                   : recordingError || "Something went wrong. Please try again."}
               </p>
 
@@ -1441,71 +1444,33 @@ export default function VoiceRecorder() {
                 }}
               >
                 {passed ? (
-                  <>
-                    <motion.button
-                      whileHover={{
-                        scale: 1.05,
-                        boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleSelection("individual")}
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "24px",
-                        borderRadius: "16px",
-                        backgroundImage:
-                          "linear-gradient(135deg, #3b82f6, #2563eb)",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#fff",
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      <User size={32} />
-                      <span style={{ fontSize: "1.125rem", fontWeight: "600" }}>
-                        Individual
-                      </span>
-                      <span style={{ fontSize: "0.875rem", opacity: 0.8 }}>
-                        Personal use
-                      </span>
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{
-                        scale: 1.05,
-                        boxShadow: "0 8px 24px rgba(16, 185, 129, 0.4)",
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleSelection("company")}
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "24px",
-                        borderRadius: "16px",
-                        backgroundImage:
-                          "linear-gradient(135deg, #10b981, #059669)",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#fff",
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      <Building2 size={32} />
-                      <span style={{ fontSize: "1.125rem", fontWeight: "600" }}>
-                        Company
-                      </span>
-                      <span style={{ fontSize: "0.875rem", opacity: 0.8 }}>
-                        Business use
-                      </span>
-                    </motion.button>
-                  </>
+                  <motion.button
+                    whileHover={{
+                      scale: 1.05,
+                      boxShadow: "0 8px 24px rgba(251, 191, 36, 0.4)",
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleContinueToRegistration}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "16px 40px",
+                      borderRadius: "50px",
+                      backgroundImage:
+                        "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#fff",
+                      fontSize: "1.125rem",
+                      fontWeight: "600",
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    <Sparkles size={24} />
+                    Continue to Registration
+                    <ChevronRight size={24} />
+                  </motion.button>
                 ) : (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
