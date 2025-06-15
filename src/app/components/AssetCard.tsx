@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import "./AssetCard.css";
-import { account, client } from "../../../utils/config";
+import { client } from "../../../utils/config";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -16,13 +16,18 @@ import {
   MoreVertical,
   Lock,
   Unlock,
+  Play,
+  Pause,
+  Sparkles,
+  DollarSign,
 } from "lucide-react";
 import { useAccount, useWalletClient } from "wagmi";
 import { Address } from "viem";
+
 type AssetCardProps = {
   assetId: string;
   creator: string;
-  isOwner?: boolean; // New prop to show privacy toggle only for owners
+  isOwner?: boolean;
 };
 
 export default function AssetCard({
@@ -67,7 +72,6 @@ export default function AssetCard({
   const [showModal, setShowModal] = useState(false);
   const [passed, setPassed] = useState(false);
   const [disputeLoading, setDisputeLoading] = useState(false);
-  // New state for privacy toggle
   const [isPublic, setIsPublic] = useState(true);
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [buttonText, setButtonText] = useState("");
@@ -97,7 +101,6 @@ export default function AssetCard({
       const data = await res.json();
       setAssetData(data.data);
 
-      // Metadata fetch
       const metaRes = await fetch(
         `https://api.storyapis.com/api/v3/assets/${assetId}/metadata`,
         options
@@ -119,23 +122,21 @@ export default function AssetCard({
             "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
             "X-Chain": "story-aeneid",
           },
-          body: `{"options":{"where":{"ipIds":["${assetId}"]}}}`
+          body: `{"options":{"where":{"ipIds":["${assetId}"]}}}`,
         }
       );
 
       const priceData = await response.json();
       const rawMintingFee = priceData.data[0].terms.defaultMintingFee;
-      if (rawMintingFee == null || rawMintingFee == undefined){
+      if (rawMintingFee == null || rawMintingFee == undefined) {
         throw new Error("Minting fee is null");
       }
-      if (rawMintingFee == 0){
+      if (rawMintingFee == 0) {
         setButtonText("Buy licence for Free!!");
-      }
-      else{
+      } else {
         const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
         setButtonText("Buy licence for " + mintingFee + " IP");
       }
-      // Load privacy state from API
       try {
         const privacyRes = await fetch(
           `/api/update-voice-privacy?assetId=${assetId}`
@@ -146,7 +147,6 @@ export default function AssetCard({
         }
       } catch (error) {
         console.error("Error loading privacy state:", error);
-        // Default to public if error
         setIsPublic(true);
       }
 
@@ -164,7 +164,6 @@ export default function AssetCard({
   const truncate = (addr: string | undefined) =>
     addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : "";
 
-  // Play/pause logic
   const handlePlayClick = () => {
     if (audioRef.current) {
       if (audioPlaying) {
@@ -175,19 +174,17 @@ export default function AssetCard({
       setAudioPlaying(!audioPlaying);
     }
   };
-  // When audio finishes or is paused
+
   const handleAudioEnded = () => {
     setAudioPlaying(false);
     if (audioRef.current) audioRef.current.currentTime = 0;
   };
 
-  // Privacy toggle handler
   const handlePrivacyToggle = async () => {
     setPrivacyLoading(true);
     try {
       const newPrivacyState = !isPublic;
 
-      // Call the API to update privacy
       const res = await fetch("/api/update-voice-privacy", {
         method: "POST",
         headers: {
@@ -196,7 +193,7 @@ export default function AssetCard({
         body: JSON.stringify({
           assetId,
           isPublic: newPrivacyState,
-          userAddress: creator, // Pass the creator address for future authentication
+          userAddress: creator,
         }),
       });
 
@@ -218,71 +215,83 @@ export default function AssetCard({
   };
 
   if (loading || !assetData || !metaData) {
-    return <div className="asset-card loading">Loading asset...</div>;
+    return (
+      <motion.div
+        className="asset-card-modern loading"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="loading-shimmer" />
+        <div className="loading-content">
+          <Loader2 size={32} className="loading-spinner" />
+          <span>Loading voice asset...</span>
+        </div>
+      </motion.div>
+    );
   }
 
   const mintLicense = async () => {
-      const res = await fetch(
-        `https://api.storyapis.com/api/v3/detailed-ip-license-terms`,
-        {
-          method: "POST",
-          headers: {
-            "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
-            "X-Chain": "story-aeneid",
-          },
-          body: `{"options":{"where":{"ipIds":["${assetId}"]}}}`
-        }
-      );
-      const data = await res.json();
-      const licenseTerms = data.data[0];
-      console.log(licenseTerms);
-      // const addr = useWalletClient().data?.account.address;
-      console.log(licenseTerms.id);
-      console.log(client.license);
-      const rawMintingFee = licenseTerms.terms.defaultMintingFee;
-      
-      if(rawMintingFee == null || rawMintingFee == undefined){
-        throw new Error("Minting fee is null");
+    const res = await fetch(
+      `https://api.storyapis.com/api/v3/detailed-ip-license-terms`,
+      {
+        method: "POST",
+        headers: {
+          "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
+          "X-Chain": "story-aeneid",
+        },
+        body: `{"options":{"where":{"ipIds":["${assetId}"]}}}`,
       }
-      if(rawMintingFee == 0){
-        const response = await client.license.mintLicenseTokens({
-          licenseTermsId: licenseTerms.id,
-          licensorIpId: assetId as Address,
-          receiver: creatorAddr as Address, // optional
-          amount: 1,
-          maxMintingFee: BigInt(0), // disabled
-          maxRevenueShare: 100, // default
-        });
-        console.log(response);
-        console.log(
-          `License Token minted at transaction hash ${response.txHash}, License IDs: ${response.licenseTokenIds}`
-        );
-        setButtonText("Buy licence for Free!!");
-        return;
-      }
-      const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
-      console.log({
-        licenseTermsId: licenseTerms.id,
-        licensorIpId: assetId as `0x${string}`,
-        receiver: creatorAddr as `0x${string}`, // optional
-        amount: 1,
-        maxMintingFee: mintingFee, // disabled
-        maxRevenueShare: 100, // default
-      });
+    );
+    const data = await res.json();
+    const licenseTerms = data.data[0];
+    console.log(licenseTerms);
+    console.log(licenseTerms.id);
+    console.log(client.license);
+    const rawMintingFee = licenseTerms.terms.defaultMintingFee;
+
+    if (rawMintingFee == null || rawMintingFee == undefined) {
+      throw new Error("Minting fee is null");
+    }
+    if (rawMintingFee == 0) {
       const response = await client.license.mintLicenseTokens({
         licenseTermsId: licenseTerms.id,
-        licensorIpId: assetId as `0x${string}`,
-        receiver: creatorAddr as `0x${string}`, // optional
+        licensorIpId: assetId as Address,
+        receiver: creatorAddr as Address,
         amount: 1,
-        maxMintingFee: 1, // disabled
-        maxRevenueShare: 100, // default
+        maxMintingFee: BigInt(0),
+        maxRevenueShare: 100,
       });
       console.log(response);
       console.log(
         `License Token minted at transaction hash ${response.txHash}, License IDs: ${response.licenseTokenIds}`
       );
-      setButtonText("Buy licence for " + mintingFee + "IP");
+      setButtonText("Buy licence for Free!!");
+      return;
+    }
+    const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
+    console.log({
+      licenseTermsId: licenseTerms.id,
+      licensorIpId: assetId as `0x${string}`,
+      receiver: creatorAddr as `0x${string}`,
+      amount: 1,
+      maxMintingFee: mintingFee,
+      maxRevenueShare: 100,
+    });
+    const response = await client.license.mintLicenseTokens({
+      licenseTermsId: licenseTerms.id,
+      licensorIpId: assetId as `0x${string}`,
+      receiver: creatorAddr as `0x${string}`,
+      amount: 1,
+      maxMintingFee: 1,
+      maxRevenueShare: 100,
+    });
+    console.log(response);
+    console.log(
+      `License Token minted at transaction hash ${response.txHash}, License IDs: ${response.licenseTokenIds}`
+    );
+    setButtonText("Buy licence for " + mintingFee + "IP");
   };
+
   const raiseDispute = async () => {
     if (disputeType === DisputeType.None) {
       alert("Please select a dispute type");
@@ -306,135 +315,145 @@ export default function AssetCard({
   };
 
   return (
-    <div className="asset-card">
-      {/* Left: Image with play button */}
-      <div className="asset-card-image-wrapper">
-        <img src={imageUrl} alt={title} className="asset-card-image" />
-        <button
-          className={`asset-card-play-btn ${audioPlaying ? "pause" : ""}`}
-          onClick={handlePlayClick}
-          aria-label={audioPlaying ? "Pause" : "Play"}
-        >
-          {audioPlaying ? (
-            // Pause Icon
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-              <rect x="6" y="5" width="4" height="14" rx="2" />
-              <rect x="14" y="5" width="4" height="14" rx="2" />
-            </svg>
-          ) : (
-            // Play Icon
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-              <polygon points="8,5 19,12 8,19" />
-            </svg>
-          )}
-        </button>
-        <audio
-          ref={audioRef}
-          src={mediaUrl}
-          onEnded={handleAudioEnded}
-          onPause={handleAudioEnded}
-          style={{ display: "none" }}
-        />
-      </div>
-      {/* Right: Details */}
-      <div className="asset-card-details">
-        <div className="asset-card-title">{title}</div>
-        <div className="asset-card-desc">{description}</div>
-        <a
-          href={`https://aeneid.explorer.story.foundation/ipa/${assetId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="asset-card-tag"
-          title={assetId}
-        >
-          {truncate(assetId)}
-        </a>
-        <div className="asset-card-creator">
-          Creator: <span>{truncate(creatorAddr.toString())}</span>
+    <motion.div
+      className="asset-card-modern"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="card-gradient-border" />
+
+      <div className="card-content">
+        <div className="card-media-section">
+          <div className="card-image-wrapper">
+            <img src={imageUrl} alt={title} className="card-image" />
+            <div className="card-image-overlay">
+              <motion.button
+                className={`play-button ${audioPlaying ? "playing" : ""}`}
+                onClick={handlePlayClick}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {audioPlaying ? <Pause size={24} /> : <Play size={24} />}
+              </motion.button>
+            </div>
+            {audioPlaying && (
+              <div className="audio-visualizer">
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="visualizer-bar"
+                    animate={{
+                      height: ["20%", "100%", "20%"],
+                    }}
+                    transition={{
+                      duration: 0.5 + i * 0.1,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="card-details">
+            <div className="title-section">
+              <h3 className="card-title">{title}</h3>
+              <motion.button
+                className="options-button"
+                onClick={() => setShowOptions(!showOptions)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <MoreVertical size={20} />
+              </motion.button>
+            </div>
+
+            <p className="card-description">{description}</p>
+
+            <div className="card-meta">
+              <div className="meta-item">
+                <span className="meta-label">Creator</span>
+                <a
+                  href={`https://aeneid.explorer.story.foundation/address/${creatorAddr}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="meta-value creator-link"
+                >
+                  {truncate(creatorAddr.toString())}
+                  <SquareArrowOutUpRight size={14} />
+                </a>
+              </div>
+
+              <div className="meta-item">
+                <span className="meta-label">Asset ID</span>
+                <a
+                  href={`https://aeneid.explorer.story.foundation/ipa/${assetId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="meta-value asset-link"
+                >
+                  {truncate(assetId)}
+                  <SquareArrowOutUpRight size={14} />
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
-        {/* Always render an audio player below for control */}
+
         <audio
           ref={audioRef}
           src={mediaUrl}
-          controls
-          style={{ width: "100%", marginTop: "10px" }}
+          className="audio-player"
           onPlay={() => setAudioPlaying(true)}
           onPause={handleAudioEnded}
           onEnded={handleAudioEnded}
         />
-        <div>
-          <button
+
+        <div className="card-actions">
+          <motion.button
+            className="license-button"
             onClick={(e) => {
               e.preventDefault();
               mintLicense();
             }}
-            style={{
-              position: 'relative',
-              padding: '0.6rem 1.4rem',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              color: '#fff',
-              background: 'linear-gradient(135deg, #ff00cc, #3333ff)',
-              border: '2px solid transparent',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              overflow: 'hidden',
-              transition: 'color 0.3s ease, box-shadow 0.3s ease',
-              boxShadow: '0 0 5px #ff00cc, 0 0 10px #3333ff, inset 0 0 5px rgba(255,255,255,0.2)',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-            }}
-          >
-            {buttonText}
-          </button>
-        </div>
-
-        {/* Privacy Toggle for owners */}
-        {isOwner && (
-          <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={handlePrivacyToggle}
-            disabled={privacyLoading}
-            style={{
-              marginTop: "12px",
-              width: "100%",
-              padding: "10px",
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: isPublic
-                ? "rgba(239, 68, 68, 0.1)"
-                : "rgba(16, 185, 129, 0.1)",
-              color: isPublic ? "#ef4444" : "#10b981",
-              fontWeight: "600",
-              cursor: privacyLoading ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              transition: "all 0.3s ease",
-            }}
           >
-            {privacyLoading ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : isPublic ? (
-              <>
-                <Lock size={18} />
-                Make Private
-              </>
-            ) : (
-              <>
-                <Unlock size={18} />
-                Make Public
-              </>
-            )}
+            <div className="button-gradient" />
+            <DollarSign size={20} />
+            <span>{buttonText || "License Voice"}</span>
+            <Sparkles size={16} className="button-sparkle" />
           </motion.button>
-        )}
+
+          {isOwner && (
+            <motion.button
+              className={`privacy-button ${isPublic ? "public" : "private"}`}
+              onClick={handlePrivacyToggle}
+              disabled={privacyLoading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {privacyLoading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : isPublic ? (
+                <>
+                  <Lock size={18} />
+                  <span>Make Private</span>
+                </>
+              ) : (
+                <>
+                  <Unlock size={18} />
+                  <span>Make Public</span>
+                </>
+              )}
+            </motion.button>
+          )}
+        </div>
       </div>
-      <MoreVertical
-        className="asset-card-dots"
-        onClick={() => setShowOptions(!showOptions)}
-      />
+
       <AnimatePresence>
         {showOptions && !showDisputeModal && (
           <motion.div
@@ -811,7 +830,6 @@ export default function AssetCard({
               </div>
               {disputeButton && (
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  `
                   <button
                     onClick={raiseDispute}
                     disabled={!disputeButton}
@@ -1017,7 +1035,6 @@ export default function AssetCard({
               exit={{ scale: 0.8 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
-              {/* 3 bouncing‐dots */}
               <div
                 style={{ display: "flex", gap: "8px", marginBottom: "16px" }}
               >
@@ -1059,6 +1076,6 @@ export default function AssetCard({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

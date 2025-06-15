@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import { useAccount } from "wagmi";
 import { motion, AnimatePresence } from "framer-motion";
 import storyContractAbi from "../../../StoryContractABI.json";
-import AssetCard from "../components/AssetCard.";
+import AssetCard from "../components/AssetCard";
 import { Mic, Sparkles, Loader2, AlertCircle, Plus } from "lucide-react";
 import Link from "next/link";
 

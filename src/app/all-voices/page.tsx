@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 import storyContractAbi from "../../../StoryContractABI.json";
-import AssetCard from "../components/AssetCard.";
+import AssetCard from "../components/AssetCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertCircle, Sparkles, List, RefreshCw } from "lucide-react";
 
