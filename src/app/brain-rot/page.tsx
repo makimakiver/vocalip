@@ -153,134 +153,134 @@ function VideoPage() {
     }
   };
 
-  // Simple voice list item component
-  const VoiceListItem = ({ assetId, creator, index, onSelect }: any) => {
-    const [title, setTitle] = useState<string>("Loading...");
-    const [mediaUrl, setMediaUrl] = useState<string>("");
-    const [isPlaying, setIsPlaying] = useState(false);
-    const audioRef = useRef<HTMLAudioElement>(null);
+//   // Simple voice list item component
+//   const VoiceListItem = ({ assetId, creator, index, onSelect }: any) => {
+//     const [title, setTitle] = useState<string>("Loading...");
+//     const [mediaUrl, setMediaUrl] = useState<string>("");
+//     const [isPlaying, setIsPlaying] = useState(false);
+//     const audioRef = useRef<HTMLAudioElement>(null);
 
-    useEffect(() => {
-      const fetchVoiceData = async () => {
-        try {
-          const options = {
-            method: "GET",
-            headers: {
-              "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
-              "X-Chain": "story-aeneid",
-            },
-          };
+//     useEffect(() => {
+//       const fetchVoiceData = async () => {
+//         try {
+//           const options = {
+//             method: "GET",
+//             headers: {
+//               "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
+//               "X-Chain": "story-aeneid",
+//             },
+//           };
 
-          const metaRes = await fetch(
-            `https://api.storyapis.com/api/v3/assets/${assetId}/metadata`,
-            options
-          );
-          const metaJson = await metaRes.json();
+//           const metaRes = await fetch(
+//             `https://api.storyapis.com/api/v3/assets/${assetId}/metadata`,
+//             options
+//           );
+//           const metaJson = await metaRes.json();
 
-          if (metaJson.metadataUri) {
-            const metaDetail = await fetch(metaJson.metadataUri);
-            const meta = await metaDetail.json();
-            setTitle(meta.title || `Voice ${index + 1}`);
-            setMediaUrl(meta.mediaUrl || "");
-          }
-        } catch (err) {
-          setTitle(`Voice ${index + 1}`);
-        }
-      };
+//           if (metaJson.metadataUri) {
+//             const metaDetail = await fetch(metaJson.metadataUri);
+//             const meta = await metaDetail.json();
+//             setTitle(meta.title || `Voice ${index + 1}`);
+//             setMediaUrl(meta.mediaUrl || "");
+//           }
+//         } catch (err) {
+//           setTitle(`Voice ${index + 1}`);
+//         }
+//       };
 
-      fetchVoiceData();
-    }, [assetId, index]);
+//       fetchVoiceData();
+//     }, [assetId, index]);
 
-    const handlePlayPause = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (audioRef.current) {
-        if (isPlaying) {
-          audioRef.current.pause();
-        } else {
-          audioRef.current.play();
-        }
-        setIsPlaying(!isPlaying);
-      }
-    };
+//     const handlePlayPause = (e: React.MouseEvent) => {
+//       e.stopPropagation();
+//       if (audioRef.current) {
+//         if (isPlaying) {
+//           audioRef.current.pause();
+//         } else {
+//           audioRef.current.play();
+//         }
+//         setIsPlaying(!isPlaying);
+//       }
+//     };
 
-    return (
-      <div
-        style={{
-          backgroundColor: "rgba(255, 255, 255, 0.05)",
-          borderRadius: "8px",
-          padding: "1rem",
-          cursor: "pointer",
-          transition: "background-color 0.2s",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
-        }}
-        onClick={onSelect}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <button
-            onClick={handlePlayPause}
-            style={{
-              width: "50px",
-              height: "50px",
-              borderRadius: "8px",
-              backgroundColor: isPlaying
-                ? "rgba(239, 68, 68, 0.2)"
-                : "rgba(251, 191, 36, 0.2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            {isPlaying ? (
-              <Pause size={24} color={isPlaying ? "#ef4444" : "#fbbf24"} />
-            ) : (
-              <Play size={24} color="#fbbf24" />
-            )}
-          </button>
+//     return (
+//       <div
+//         style={{
+//           backgroundColor: "rgba(255, 255, 255, 0.05)",
+//           borderRadius: "8px",
+//           padding: "1rem",
+//           cursor: "pointer",
+//           transition: "background-color 0.2s",
+//           border: "1px solid rgba(255, 255, 255, 0.1)",
+//         }}
+//         onMouseEnter={(e) => {
+//           e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+//         }}
+//         onMouseLeave={(e) => {
+//           e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+//         }}
+//         onClick={onSelect}
+//       >
+//         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+//           <button
+//             onClick={handlePlayPause}
+//             style={{
+//               width: "50px",
+//               height: "50px",
+//               borderRadius: "8px",
+//               backgroundColor: isPlaying
+//                 ? "rgba(239, 68, 68, 0.2)"
+//                 : "rgba(251, 191, 36, 0.2)",
+//               display: "flex",
+//               alignItems: "center",
+//               justifyContent: "center",
+//               flexShrink: 0,
+//               border: "none",
+//               cursor: "pointer",
+//               transition: "all 0.2s",
+//             }}
+//           >
+//             {isPlaying ? (
+//               <Pause size={24} color={isPlaying ? "#ef4444" : "#fbbf24"} />
+//             ) : (
+//               <Play size={24} color="#fbbf24" />
+//             )}
+//           </button>
 
-          <div style={{ flex: 1 }}>
-            <h3
-              style={{
-                color: "#fff",
-                fontSize: "1rem",
-                fontWeight: "500",
-                margin: "0 0 0.25rem 0",
-              }}
-            >
-              {title}
-            </h3>
-            <p
-              style={{
-                color: "rgba(255, 255, 255, 0.6)",
-                fontSize: "0.875rem",
-                margin: 0,
-              }}
-            >
-              {assetId.slice(0, 8)}...{assetId.slice(-6)}
-            </p>
-          </div>
+//           <div style={{ flex: 1 }}>
+//             <h3
+//               style={{
+//                 color: "#fff",
+//                 fontSize: "1rem",
+//                 fontWeight: "500",
+//                 margin: "0 0 0.25rem 0",
+//               }}
+//             >
+//               {title}
+//             </h3>
+//             <p
+//               style={{
+//                 color: "rgba(255, 255, 255, 0.6)",
+//                 fontSize: "0.875rem",
+//                 margin: 0,
+//               }}
+//             >
+//               {assetId.slice(0, 8)}...{assetId.slice(-6)}
+//             </p>
+//           </div>
 
-          <ChevronRight size={20} color="rgba(255, 255, 255, 0.4)" />
-        </div>
+//           <ChevronRight size={20} color="rgba(255, 255, 255, 0.4)" />
+//         </div>
 
-        <audio
-          ref={audioRef}
-          src={mediaUrl}
-          onEnded={() => setIsPlaying(false)}
-          style={{ display: "none" }}
-        />
-      </div>
-    );
-  };
+//         <audio
+//           ref={audioRef}
+//           src={mediaUrl}
+//           onEnded={() => setIsPlaying(false)}
+//           style={{ display: "none" }}
+//         />
+//       </div>
+//     );
+//   };
 
   return (
     <div
@@ -759,17 +759,15 @@ function VideoPage() {
                   gap: "0.5rem",
                 }}
               >
-                {voices.map((voice, index) => (
-                  <VoiceListItem
-                    key={voice[1]}
-                    assetId={voice[1]}
-                    creator={voice[0]}
-                    index={index}
-                    onSelect={() => {
-                      setSelectedVoice(voice[1]);
-                      setShowVoiceModal(false);
-                    }}
-                  />
+                {voices.map((voice) => (
+                    <VoiceSelection
+                        key={voice[1]}
+                        assetId={voice[1]}
+                        creator={voice[0]}
+                        setSelectedVoice={setSelectedVoice}
+                        setShowModalInside={setShowVoiceModal}
+                        setLicenseTermsId={setLicenseTermsId}
+                    />
                 ))}
               </div>
             </motion.div>

@@ -3,8 +3,6 @@ import { NextResponse } from 'next/server';
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import FormData from 'form-data';          // npm install form-data
 import fetch from 'node-fetch';            // npm install node-fetch
-import { Buffer } from 'buffer';
-import OpenAI from 'openai';
 
 export async function POST(request: Request) {
     try {

@@ -277,405 +277,135 @@ export default function VoiceSelection({
   };
 
   return (
-    <div className="asset-card">
-      {/* Left: Image with play button */}
-      <div className="asset-card-image-wrapper">
-        <img src={imageUrl} alt={title} className="asset-card-image" />
-        <button
-          className={`asset-card-play-btn ${audioPlaying ? "pause" : ""}`}
-          onClick={handlePlayClick}
-          aria-label={audioPlaying ? "Pause" : "Play"}
-        >
-          {audioPlaying ? (
-            // Pause Icon
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-              <rect x="6" y="5" width="4" height="14" rx="2" />
-              <rect x="14" y="5" width="4" height="14" rx="2" />
-            </svg>
-          ) : (
-            // Play Icon
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-              <polygon points="8,5 19,12 8,19" />
-            </svg>
-          )}
-        </button>
-        <audio
-          ref={audioRef}
-          src={mediaUrl}
-          onEnded={handleAudioEnded}
-          onPause={handleAudioEnded}
-          style={{ display: "none" }}
-        />
-      </div>
-      {/* Right: Details */}
-      <div className="asset-card-details">
-        <div className="asset-card-title">{title}</div>
-        <div className="asset-card-desc">{description}</div>
-        <a
-          href={`https://aeneid.explorer.story.foundation/ipa/${assetId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="asset-card-tag"
-          title={assetId}
-        >
-          {truncate(assetId)}
-        </a>
-        <div className="asset-card-creator">
-          Creator: <span>{truncate(creatorAddr.toString())}</span>
-        </div>
-        {/* Always render an audio player below for control */}
-        <audio
-          ref={audioRef}
-          src={mediaUrl}
-          controls
-          style={{ width: "100%", marginTop: "10px" }}
-          onPlay={() => setAudioPlaying(true)}
-          onPause={handleAudioEnded}
-          onEnded={handleAudioEnded}
-        />
-        <div>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              mintLicense();
-            }}
-            style={{
-              position: 'relative',
-              padding: '0.6rem 1.4rem',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              color: '#fff',
-              background: 'linear-gradient(135deg, #ff00cc, #3333ff)',
-              border: '2px solid transparent',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              overflow: 'hidden',
-              transition: 'color 0.3s ease, box-shadow 0.3s ease',
-              boxShadow: '0 0 5px #ff00cc, 0 0 10px #3333ff, inset 0 0 5px rgba(255,255,255,0.2)',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-            }}
-          >
-            {free ? "Use the voice" : "Buy licence for " + mintingFee + " IP"}
-          </button>
-        </div>
-
-        {/* Privacy Toggle for owners */}
-    
-      </div>
-      <MoreVertical
-        className="asset-card-dots"
-        onClick={() => setShowOptions(!showOptions)}
+    <motion.div
+    // Animate in + hover lift
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    whileHover={{ scale: 1.02, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
+    style={{
+      display: "flex",
+      gap: "1rem",
+      width: "100%",
+      padding: "1rem",
+      borderRadius: "12px",
+      background: "#fff",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      position: "relative",
+    }}
+  >
+    {/* Image + play */}
+    <div
+      style={{
+        position: "relative",
+        flexShrink: 0,
+        width: "160px",
+        height: "160px",
+      }}
+    >
+      <img
+        src={imageUrl}
+        alt={title}
+        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }}
       />
-      <AnimatePresence>
-        {showOptions && !showDisputeModal && (
-          <motion.div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              zIndex: 10,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(0,0,0,0.4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              style={{
-                width: "90%",
-                maxWidth: "400px",
-                backgroundColor: "#fff",
-                borderRadius: "24px",
-                padding: "24px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                position: "relative",
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
-              >
-                <div
-                  onClick={() =>
-                    window.open(
-                      `https://aeneid.explorer.story.foundation/ipa/${assetId}`,
-                      "_blank"
-                    )
-                  }
-                  style={{
-                    padding: "10px",
-                    borderRadius: "12px",
-                    border: "none",
-                    backgroundColor: "#007bff",
-                    color: "#fff",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
-                  View Details
-                  <SquareArrowOutUpRight />
-                </div>
-                <div
-                  onClick={() => {
-                    setShowOptions(false);
-                    setShowDisputeModal(true);
-                  }}
-                  style={{
-                    padding: "10px",
-                    borderRadius: "12px",
-                    border: "none",
-                    color: "#fff",
-                    backgroundColor: "#dc3545",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                  }}
-                >
-                  Raise Dispute
-                  <MessageSquareWarning />
-                </div>
-              </div>
-              <X onClick={() => setShowOptions(false)} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 10,
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              style={{
-                width: "90%",
-                maxWidth: "400px",
-                backgroundColor: "#fff",
-                borderRadius: "16px",
-                padding: "32px",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                textAlign: "center",
-              }}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            >
-              <div
-                style={{
-                  marginBottom: "16px",
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
-                <ArrowLeft
-                  style={{
-                    width: "20%",
-                    backgroundColor: "white",
-                    alignSelf: "flex-start",
-                    color: "white",
-                  }}
-                />
-                {passed ? (
-                  <CheckCircle
-                    size={48}
-                    style={{ color: "#38a169", width: "60%" }}
-                  />
-                ) : (
-                  <AlertCircle
-                    size={48}
-                    style={{ color: "#e53e3e", width: "60%" }}
-                  />
-                )}
-                <X
-                  onClick={() => setShowModal(false)}
-                  size={24}
-                  style={{
-                    cursor: "pointer",
-                    color: "#a0aec0",
-                    width: "20%",
-                    alignSelf: "flex-start",
-                  }}
-                />
-              </div>
-              <h2
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  color: "#2d3748",
-                  marginBottom: "12px",
-                }}
-              >
-                {passed ? "Select Registration Type" : "Invalid Recording"}
-              </h2>
-              <p style={{ color: "#4a5568", marginBottom: "24px" }}>
-                {passed
-                  ? "Your recording is saved! Choose how you'd like to register:"
-                  : "Invalid recording. Please try again."}
-              </p>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  justifyContent: "center",
-                }}
-              >
-                {passed ? (
-                  <>
-                    <motion.button
-                      onClick={() => setShowModal(false)}
-                      whileHover={{ scale: 1.05 }}
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "12px 0",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                        cursor: "pointer",
-                        border: "none",
-                        outline: "none",
-                        color: "#fff",
-                        backgroundColor: "#3182ce",
-                      }}
-                    >
-                      <Mic style={{ marginRight: "8px" }} /> Back
-                    </motion.button>
-                  </>
-                ) : (
-                  <motion.button
-                    onClick={() => {
-                      setShowModal(false);
-                    }}
-                    whileHover={{ scale: 1.05 }}
-                    style={{
-                      padding: "12px 24px",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                      cursor: "pointer",
-                      border: "none",
-                      outline: "none",
-                      color: "#fff",
-                      backgroundColor: "#2f855a",
-                    }}
-                  >
-                    Try Again
-                  </motion.button>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {disputeLoading && (
-          <motion.div
-            key="loading-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 9999,
-            }}
-          >
-            <motion.div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              {/* 3 bouncing‐dots */}
-              <div
-                style={{ display: "flex", gap: "8px", marginBottom: "16px" }}
-              >
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    style={{
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
-                      backgroundColor: "white",
-                    }}
-                    animate={{
-                      y: [0, -10, 0],
-                      opacity: [0.6, 1, 0.6],
-                    }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 0.8,
-                      delay: i * 0.2,
-                    }}
-                  />
-                ))}
-              </div>
-              <motion.span
-                style={{
-                  color: "white",
-                  fontSize: "1.125rem",
-                  fontWeight: 500,
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ delay: 0.4, duration: 0.3 }}
-              >
-                Loading...
-              </motion.span>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
+      <motion.button
+        onClick={handlePlayClick}
+        aria-label={audioPlaying ? "Pause" : "Play"}
+        initial={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "48px",
+          height: "48px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: audioPlaying ? "#ff00cc" : "rgba(0,0,0,0.6)",
+          border: "none",
+          borderRadius: "50%",
+          cursor: "pointer",
+          boxShadow: audioPlaying
+            ? "0 0 8px #ff00cc, inset 0 0 4px rgba(255,0,204,0.5)"
+            : "0 0 4px rgba(0,0,0,0.5)",
+        }}
+      >
+        {audioPlaying ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+            <rect x="6" y="5" width="4" height="14" rx="2" />
+            <rect x="14" y="5" width="4" height="14" rx="2" />
+          </svg>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+            <polygon points="8,5 19,12 8,19" />
+          </svg>
+        )}
+      </motion.button>
+
+      <audio
+        ref={audioRef}
+        src={mediaUrl}
+        onEnded={handleAudioEnded}
+        onPause={handleAudioEnded}
+        style={{ display: "none" }}
+      />
     </div>
+
+    {/* Details */}
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 600, color: "#222" }}>
+        {title}
+      </h3>
+      <p style={{ margin: 0, fontSize: "0.9rem", color: "#555" }}>{description}</p>
+      <a
+        href={`https://aeneid.explorer.story.foundation/ipa/${assetId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={assetId}
+        style={{ marginTop: "0.25rem", fontSize: "0.8rem", color: "#007BFF", textDecoration: "none" }}
+      >
+        {truncate(assetId)}
+      </a>
+      <div style={{ marginTop: "0.25rem", fontSize: "0.8rem", color: "#888" }}>
+        Creator: <span>{truncate(creatorAddr.toString())}</span>
+      </div>
+
+      <audio
+        ref={audioRef}
+        src={mediaUrl}
+        controls
+        onPlay={() => setAudioPlaying(true)}
+        onPause={handleAudioEnded}
+        onEnded={handleAudioEnded}
+        style={{ width: "100%", marginTop: "0.75rem" }}
+      />
+
+      <motion.button
+        onClick={(e) => { e.preventDefault(); mintLicense() }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        style={{
+          marginTop: "1rem",
+          padding: "0.6rem 1.4rem",
+          fontSize: "1rem",
+          fontWeight: "bold",
+          color: "#fff",
+          background: "linear-gradient(135deg, #ff00cc, #3333ff)",
+          border: "2px solid transparent",
+          borderRadius: "8px",
+          cursor: "pointer",
+          boxShadow: "0 0 5px #ff00cc, 0 0 10px #3333ff, inset 0 0 5px rgba(255,255,255,0.2)",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+        }}
+      >
+        {free ? "Use the voice" : `Buy license for ${mintingFee} IP`}
+      </motion.button>
+    </div>
+  </motion.div>
   );
 }
