@@ -33,14 +33,14 @@ export default function PILTermsPage() {
   const { data: walletClient, isError, isLoading } = useWalletClient();
   const STORY_RPC_URL = "https://aeneid.storyrpc.io";
   const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL);
-  const storyContractAddress = "0x57A220322E44B7b42125d02385CC04816eDB5ec7";
+  const storyContractAddress = "0x1065d627CF25c0380e8fF33F4c5b23C4826d6D17";
   const { cid } = useParams();
   const router = useRouter();
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const { writeContract } = useWriteContract();
   // Voice Profile state
-  const [voicePicture, setVoicePicture] = useState(null);
-  const [voicePictureURL, setVoicePictureURL] = useState(null);
+  const [voicePicture, setVoicePicture] = useState<File | null>(null);
+  const [voicePictureURL, setVoicePictureURL] = useState<string | null>(null);
   const [voiceName, setVoiceName] = useState("");
   const [voiceCategory, setVoiceCategory] = useState("Generic");
   const [voiceDescription, setVoiceDescription] = useState("");
@@ -52,7 +52,7 @@ export default function PILTermsPage() {
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
   const [registrationData, setRegistrationData] = useState(null);
   const [defaultMintingFee, setDefaultMintingFee] = useState(0);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Clean up URL object on unmount or change
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function PILTermsPage() {
     return provider.getSigner();
   };
   const triggerFileSelect = () => fileInputRef.current?.click();
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setVoicePicture(file);
@@ -81,12 +81,12 @@ export default function PILTermsPage() {
   };
 
   // Drag handlers
-  const handleDrag = (e) => {
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const handleDragIn = (e) => {
+  const handleDragIn = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
@@ -94,13 +94,13 @@ export default function PILTermsPage() {
     }
   };
 
-  const handleDragOut = (e) => {
+  const handleDragOut = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);

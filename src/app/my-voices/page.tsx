@@ -9,7 +9,7 @@ import { Mic, Sparkles, Loader2, AlertCircle, Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function MyVoicesPage() {
-  const contractAddress = "0x57A220322E44B7b42125d02385CC04816eDB5ec7";
+  const contractAddress = "0x1065d627CF25c0380e8fF33F4c5b23C4826d6D17";
   const STORY_RPC_URL = "https://aeneid.storyrpc.io";
   const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL);
   const storyContract = new ethers.Contract(

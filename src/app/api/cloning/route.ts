@@ -18,7 +18,7 @@ export async function POST(request: Request) {
           name: "My Voice Clone",
           // Replace with the paths to your audio files.
           // The more files you add, the better the clone will be.
-          files: [fileStream],
+          files: [fileStream as any],
       });
       console.log(voice);
       return NextResponse.json({ cid: voice.voiceId });

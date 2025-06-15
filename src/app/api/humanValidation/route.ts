@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         .toLowerCase()
         .replace(/\s+/g, ' ')
         .trim()
-        const compareText = text
+        const compareText = inputText
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^A-Za-z0-9\s]/g, '')

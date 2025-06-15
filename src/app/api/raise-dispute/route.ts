@@ -4,7 +4,7 @@ import { mintNFT } from '../../../../utils/functions/mintNFT'
 import { createCommercialRemixTerms, NFTContractAddress } from '../../../../utils/utils'
 import { client, account, networkInfo } from '../../../../utils/config'
 import { Address, parseEther } from 'viem'
-import * as sha256 from 'multiformats/hashes/sha2'
+import { sha256 } from 'multiformats/hashes/sha2'
 import { CID } from 'multiformats/cid'
 import { randomBytes } from 'crypto'
 
@@ -40,7 +40,7 @@ const generateCID = async () => {
     // Generate a random 32-byte buffer
     const randomByte = randomBytes(32)
     // Hash the bytes using SHA-256
-    const hash = await sha256.sha256.digest(randomByte)
+    const hash = await sha256.digest(randomByte)
     // Create a CIDv1 in dag-pb format
     const cidv1 = CID.createV1(0x70, hash) // 0x70 = dag-pb codec
     // Convert CIDv1 to CIDv0 (Base58-encoded)

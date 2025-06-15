@@ -34,9 +34,9 @@ export default function VoiceRecorder() {
   const [armed, setArmed] = useState(false);
   const [currentCid, setCurrentCid] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const recorderRef = useRef<MediaRecorder>();
+  const recorderRef = useRef<MediaRecorder>(null);
   const chunksRef = useRef<BlobPart[]>([]);
-  const audioContextRef = useRef<AudioContext>();
+  const audioContextRef = useRef<AudioContext>(null);
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setDragging] = useState(false);
