@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Player } from "@remotion/player";
 import RemotionVideo from "../components/RemotionVideo";
 import { ethers } from "ethers";
@@ -20,6 +20,7 @@ import {
   User,
   Tag,
   Play,
+  Pause,
   SquareArrowOutUpRight,
 } from "lucide-react";
 
@@ -57,6 +58,7 @@ function VideoPage() {
     readProvider
   );
   const { address, isConnected } = useAccount();
+
   useEffect(() => {
     fetchVoices();
   }, []);
@@ -92,6 +94,7 @@ function VideoPage() {
       setVoices([]);
     }
   };
+
   const generateVideo = async () => {
     if (!selectedVoice) {
       setShowVoiceModal(true);
@@ -150,6 +153,136 @@ function VideoPage() {
       setIsExporting(false);
     }
   };
+
+  // Simple voice list item component
+  const VoiceListItem = ({ assetId, creator, index, onSelect }: any) => {
+    const [title, setTitle] = useState<string>("Loading...");
+    const [mediaUrl, setMediaUrl] = useState<string>("");
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef<HTMLAudioElement>(null);
+
+    useEffect(() => {
+      const fetchVoiceData = async () => {
+        try {
+          const options = {
+            method: "GET",
+            headers: {
+              "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
+              "X-Chain": "story-aeneid",
+            },
+          };
+
+          const metaRes = await fetch(
+            `https://api.storyapis.com/api/v3/assets/${assetId}/metadata`,
+            options
+          );
+          const metaJson = await metaRes.json();
+
+          if (metaJson.metadataUri) {
+            const metaDetail = await fetch(metaJson.metadataUri);
+            const meta = await metaDetail.json();
+            setTitle(meta.title || `Voice ${index + 1}`);
+            setMediaUrl(meta.mediaUrl || "");
+          }
+        } catch (err) {
+          setTitle(`Voice ${index + 1}`);
+        }
+      };
+
+      fetchVoiceData();
+    }, [assetId, index]);
+
+    const handlePlayPause = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (audioRef.current) {
+        if (isPlaying) {
+          audioRef.current.pause();
+        } else {
+          audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+      }
+    };
+
+    return (
+      <div
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+          borderRadius: "8px",
+          padding: "1rem",
+          cursor: "pointer",
+          transition: "background-color 0.2s",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+        }}
+        onClick={onSelect}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <button
+            onClick={handlePlayPause}
+            style={{
+              width: "50px",
+              height: "50px",
+              borderRadius: "8px",
+              backgroundColor: isPlaying
+                ? "rgba(239, 68, 68, 0.2)"
+                : "rgba(251, 191, 36, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {isPlaying ? (
+              <Pause size={24} color={isPlaying ? "#ef4444" : "#fbbf24"} />
+            ) : (
+              <Play size={24} color="#fbbf24" />
+            )}
+          </button>
+
+          <div style={{ flex: 1 }}>
+            <h3
+              style={{
+                color: "#fff",
+                fontSize: "1rem",
+                fontWeight: "500",
+                margin: "0 0 0.25rem 0",
+              }}
+            >
+              {title}
+            </h3>
+            <p
+              style={{
+                color: "rgba(255, 255, 255, 0.6)",
+                fontSize: "0.875rem",
+                margin: 0,
+              }}
+            >
+              {assetId.slice(0, 8)}...{assetId.slice(-6)}
+            </p>
+          </div>
+
+          <ChevronRight size={20} color="rgba(255, 255, 255, 0.4)" />
+        </div>
+
+        <audio
+          ref={audioRef}
+          src={mediaUrl}
+          onEnded={() => setIsPlaying(false)}
+          style={{ display: "none" }}
+        />
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -567,7 +700,6 @@ function VideoPage() {
               width: "100vw",
               height: "100vh",
               background: "rgba(0, 0, 0, 0.8)",
-              backdropFilter: "blur(10px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -575,85 +707,70 @@ function VideoPage() {
             }}
           >
             <motion.div
-              initial={{ scale: 0.8 }}
+              initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
+              exit={{ scale: 0.9 }}
               style={{
                 backgroundColor: "#1e1b4b",
-                backgroundImage: "linear-gradient(135deg, #1e1b4b, #312e81)",
-                borderRadius: "24px",
-                padding: "2.5rem",
-                width: "60vw",
-                maxWidth: "600px",
-                boxSizing: "border-box",
-                overflowY: "auto",
+                borderRadius: "16px",
+                padding: "1.5rem",
+                width: "90%",
+                maxWidth: "800px",
                 maxHeight: "80vh",
+                overflowY: "auto",
                 border: "1px solid rgba(255, 255, 255, 0.1)",
-                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
               }}
             >
-              <motion.div
+              <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  marginBottom: "2rem",
+                  marginBottom: "1.5rem",
                 }}
               >
-                <h1
+                <h2
                   style={{
-                    fontSize: "2rem",
-                    fontWeight: "700",
+                    fontSize: "1.5rem",
+                    fontWeight: "600",
                     color: "#fff",
                     margin: 0,
                   }}
                 >
-                  Select Voice Model
-                </h1>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  Select Voice
+                </h2>
+                <button
                   onClick={() => setShowVoiceModal(false)}
                   style={{
-                    background: "rgba(255, 255, 255, 0.1)",
+                    background: "transparent",
                     border: "none",
-                    borderRadius: "12px",
-                    padding: "8px",
                     cursor: "pointer",
-                    transition: "all 0.3s ease",
+                    color: "#fff",
+                    fontSize: "1.5rem",
                   }}
                 >
-                  <X size={24} color="rgba(255, 255, 255, 0.6)" />
-                </motion.button>
-              </motion.div>
+                  ×
+                </button>
+              </div>
 
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "1rem",
+                  gap: "0.5rem",
                 }}
               >
-                {voices.map((voice) => (
-                  <motion.div
-                    key={voice}
-                    whileHover={{ scale: 1.02 }}
-                    style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      borderRadius: "16px",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                      overflow: "hidden",
-                      transition: "all 0.3s ease",
+                {voices.map((voice, index) => (
+                  <VoiceListItem
+                    key={voice[1]}
+                    assetId={voice[1]}
+                    creator={voice[0]}
+                    index={index}
+                    onSelect={() => {
+                      setSelectedVoice(voice[1]);
+                      setShowVoiceModal(false);
                     }}
-                  >
-                    <VoiceSelection
-                      assetId={voice[1]}
-                      creator={voice[0]}
-                      setSelectedVoice={setSelectedVoice}
-                      setShowModalInside={setShowVoiceModal}
-                      setLicenseTermsId={setLicenseTermsId}
-                    />
-                  </motion.div>
+                  />
                 ))}
               </div>
             </motion.div>
