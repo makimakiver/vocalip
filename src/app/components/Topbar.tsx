@@ -22,7 +22,12 @@ export default function Topbar() {
 
   const links = [
     { label: "Home", href: "/", icon: <Home size={18} /> },
-    { label: "Lists", href: "/all-voices", icon: <List size={18} /> },
+    {
+      label: "Voice Marketplace",
+      href: "/all-voices",
+      icon: <List size={18} />,
+    },
+    { label: "Apps", href: "/apps", icon: <Grid3X3 size={18} /> },
     { label: "Record", href: "/record", icon: <Mic size={18} /> },
     { label: "My Voices", href: "/my-voices", icon: <Sparkles size={18} /> },
     {
@@ -30,7 +35,6 @@ export default function Topbar() {
       href: "https://spiny-elderberry-76f.notion.site/Voice-as-an-IP-assets-1fd1ff50043d8013bdeec147323122a9?pvs=74",
       icon: <Info size={18} />,
     },
-    { label: "Apps", href: "/apps", icon: <Grid3X3 size={18} /> },
   ];
 
   return (
