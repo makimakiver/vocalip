@@ -165,7 +165,7 @@ export default function AllVoicesPage() {
               textShadow: "0 0 40px rgba(251, 191, 36, 0.5)",
             }}
           >
-            All Voices
+            Voice Marketplace
           </h1>
           <p
             style={{
@@ -233,7 +233,7 @@ export default function AllVoicesPage() {
                 ) : (
                   <>
                     <Sparkles size={20} />
-                    Fetch All Voices
+                    Fetch Available Voices
                   </>
                 )}
               </>
@@ -424,7 +424,7 @@ export default function AllVoicesPage() {
               }}
             >
               <p style={{ fontSize: "1.125rem" }}>
-                Click "Fetch All Voices" to explore available voices
+                Click "Fetch Available Voices" to explore available voices
               </p>
             </motion.div>
           )}
