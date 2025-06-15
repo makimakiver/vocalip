@@ -26,6 +26,7 @@ type AssetCardProps = {
   isOwner?: boolean; // New prop to show privacy toggle only for owners
   setSelectedVoice: (voice: string) => void;
   setShowModalInside: (show: boolean) => void;
+  setLicenseTermsId: (licenseTermsId: string) => void;
 };
 
 export default function VoiceSelection({
@@ -34,6 +35,7 @@ export default function VoiceSelection({
   isOwner = false,
   setSelectedVoice,
   setShowModalInside,
+  setLicenseTermsId,
 }: AssetCardProps) {
   type AssetDataType = {
     nftMetadata?: {
@@ -246,31 +248,32 @@ export default function VoiceSelection({
         );
         setSelectedVoice(assetId);
         setShowModalInside(false);
+        setLicenseTermsId(licenseTerms.id.toString());
         return;
       }
-      const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
-      console.log({
-        licenseTermsId: licenseTerms.id,
-        licensorIpId: assetId as `0x${string}`,
-        receiver: creatorAddr as `0x${string}`, // optional
-        amount: 1,
-        maxMintingFee: mintingFee, // disabled
-        maxRevenueShare: 100, // default
-      });
-      const response = await client.license.mintLicenseTokens({
-        licenseTermsId: licenseTerms.id,
-        licensorIpId: assetId as `0x${string}`,
-        receiver: creatorAddr as `0x${string}`, // optional
-        amount: 1,
-        maxMintingFee: 1, // disabled
-        maxRevenueShare: 100, // default
-      });
-      console.log(response);
-      console.log(
+    try{
+        const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
+        const response = await client.license.mintLicenseTokens({
+            licenseTermsId: licenseTerms.id,
+            licensorIpId: assetId as `0x${string}`,
+            receiver: creatorAddr as `0x${string}`, // optional
+            amount: 1,
+            maxMintingFee: 1, // disabled
+            maxRevenueShare: 100, // default
+        });
+        console.log(response.txHash);
+        console.log(
         `License Token minted at transaction hash ${response.txHash}, License IDs: ${response.licenseTokenIds}`
-      );
-      setSelectedVoice(assetId);
-      setShowModalInside(false);
+        );
+        setSelectedVoice(assetId);
+        setShowModalInside(false);
+        setLicenseTermsId(licenseTerms.id.toString());
+      }
+      catch(err){
+        console.log(err);
+        alert("Failed to mint license");
+        return;
+      }
   };
 
   return (
@@ -672,6 +675,7 @@ export default function VoiceSelection({
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }

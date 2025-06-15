@@ -8,9 +8,14 @@ import FormData from 'form-data';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { createHash } from 'crypto';
+import { client } from '../../../../utils/config';
+import { uploadJSONToIPFS } from '../../../../utils/functions/uploadToIpfs';
+import { IpMetadata } from '@story-protocol/core-sdk';
+import { SPGNFTContractAddress } from '../../../../utils/utils';
 
 export async function POST(request: NextRequest) {
-    const { caption, voiceUrl } = await request.json();
+    const { caption, voiceUrl, voiceId, title, description, licenseTermsId, creatorName, creatorAddress } = await request.json();
     console.log("caption", caption);
     console.log("voiceUrl", voiceUrl);
     const inputProps = { caption: caption, voiceUrl: voiceUrl };
@@ -119,6 +124,69 @@ export async function POST(request: NextRequest) {
     // }
     const GATEWAY_URL = process.env.GATEWAY_URL;
     const PINATA_GATEWAY_TOKEN = process.env.PINATA_GATEWAY_TOKEN;
+    const ipMetadata: IpMetadata = client.ipAsset.generateIpMetadata({
+        title: title,
+        description: description,
+        createdAt: Date.now().toString(),
+        creators: [
+            {
+                name: creatorName,
+                address: creatorAddress,
+                contributionPercent: 100,
+            },
+        ],
+        mediaUrl: `https://${GATEWAY_URL}/ipfs/${data.IpfsHash}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`,
+        mediaHash: data.IpfsHash,
+        mediaType: 'video/mp4',
+    })
+    const ipIpfsHash = await uploadJSONToIPFS(ipMetadata)
+    const ipHash = createHash('sha256').update(JSON.stringify(ipMetadata)).digest('hex')
+    const nftMetadata = {
+        name: title,
+        description: description
+    }
+    const nftIpfsHash = await uploadJSONToIPFS(nftMetadata)
+    const nftHash = createHash('sha256').update(JSON.stringify(nftMetadata)).digest('hex')
+    // 1. Mint and Register IP asset and make it a derivative of the parent IP Asset
+    //
+    // You will be paying for the License Token using $WIP:
+    // https://aeneid.storyscan.xyz/address/0x1514000000000000000000000000000000000000
+    // If you don't have enough $WIP, the function will auto wrap an equivalent amount of $IP into
+    // $WIP for you.
+    //
+    // Docs: https://docs.story.foundation/sdk-reference/ip-asset#mintandregisteripandmakederivative
+    const childIp = await client.ipAsset.mintAndRegisterIpAndMakeDerivative({
+        spgNftContract: SPGNFTContractAddress,
+        derivData: {
+            parentIpIds: [voiceId],
+            licenseTermsIds: [licenseTermsId],
+        },
+        // NOTE: The below metadata is not configured properly. It is just to make things simple.
+        // See `simpleMintAndRegister.ts` for a proper example.
+        ipMetadata: {
+            ipMetadataURI: `https://ipfs.io/ipfs/${ipIpfsHash}`,
+            ipMetadataHash: `0x${ipHash}`,
+            nftMetadataURI: `https://ipfs.io/ipfs/${nftIpfsHash}`,
+            nftMetadataHash: `0x${nftHash}`,
+        },
+        txOptions: { waitForTransaction: true },
+    })
+    console.log('Derivative IPA created and linked:', {
+        'Transaction Hash': childIp.txHash,
+        'IPA ID': childIp.ipId,
+    })
+
+    // 2. Parent Claim Revenue
+    //
+    // // Docs: https://docs.story.foundation/sdk-reference/royalty#claimallrevenue
+    // const parentClaimRevenue = await client.royalty.claimAllRevenue({
+    //     ancestorIpId: PARENT_IP_ID,
+    //     claimer: PARENT_IP_ID,
+    //     childIpIds: [childIp.ipId as Address],
+    //     royaltyPolicies: [RoyaltyPolicyLRP],
+    //     currencyTokens: [WIP_TOKEN_ADDRESS],
+    // })
+    //console.log('Parent claimed revenue receipt:', parentClaimRevenue)
     console.log('link: ', `https://${GATEWAY_URL}/ipfs/${data.IpfsHash}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`);
-    return NextResponse.json({ link: `https://${GATEWAY_URL}/ipfs/${data.IpfsHash}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}` });
+    return NextResponse.json({ link: `https://${GATEWAY_URL}/ipfs/${data.IpfsHash}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`, ipId: childIp.ipId });
 }
