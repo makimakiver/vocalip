@@ -1,5 +1,7 @@
 # 🎯 What We're Building
 
+[Demo site from here!!!](https://vocalip-4s7p-git-main-makimakivers-projects.vercel.app)
+
 We are developing a revolutionary platform that enables voice actors to register and monetize their voices as intellectual property (IP) assets on the Story Protocol. In short this system will look like a voice selling platform where video creators can choose which cloned voice to use in there videos. 
 
 Key Features:
@@ -49,3 +51,8 @@ bun run dev
 [ExcalidDraw from here](https://link.excalidraw.com/l/4NzefGCZCYr/45KENb8jWIa)
 
 [Youtube Demo video](https://www.youtube.com/watch?v=tWFWWgxFrwI)
+
+[Presentation](https://www.canva.com/design/DAGp9yRyHf0/bRlXRU2EpQohIYXEAAsWRg/edit?utm_content=DAGp9yRyHf0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+
+
+
