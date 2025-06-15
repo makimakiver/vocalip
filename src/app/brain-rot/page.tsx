@@ -1,14 +1,27 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import { Player } from '@remotion/player';
-import RemotionVideo from '../components/RemotionVideo';
-import { ethers } from 'ethers';
-import storyContractAbi from '../../../StoryContractABI.json';
-import { useAccount } from 'wagmi';
-import { Address } from 'viem';
-import { motion } from 'framer-motion';
-import { AnimatePresence } from 'framer-motion';
-import VoiceSelection from '../components/VoiceSelection';
+"use client";
+import React, { useEffect, useState } from "react";
+import { Player } from "@remotion/player";
+import RemotionVideo from "../components/RemotionVideo";
+import { ethers } from "ethers";
+import storyContractAbi from "../../../StoryContractABI.json";
+import { useAccount } from "wagmi";
+import { Address } from "viem";
+import { motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+import VoiceSelection from "../components/VoiceSelection";
+import {
+  Video,
+  Mic,
+  Upload,
+  X,
+  Sparkles,
+  ChevronRight,
+  FileText,
+  User,
+  Tag,
+  Play,
+  SquareArrowOutUpRight,
+} from "lucide-react";
 
 interface single_word_recording {
   word: string;
@@ -17,318 +30,638 @@ interface single_word_recording {
 }
 
 function VideoPage() {
-    const [videoTitle, setVideoTitle] = useState<string>('');
-    const [videoRegistered, setVideoRegistered] = useState<string | null>(null);
-    const [videoDescription, setVideoDescription] = useState<string>('');
-    const [creatorName, setCreatorName] = useState<string>('');
-    const [configurationModal, setConfigurationModal] = useState<boolean>(false);
-    const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
-    const [licenseTermsId, setLicenseTermsId] = useState<string>('');
-    const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
-    const [captionInput, setCaptionInput] = useState<string>('');
-    const [caption, setCaption] = useState<single_word_recording[]>([]);
-    const [durationFrames, setDurationFrames] = useState<number>(0);
-    const [voiceUrl, setVoiceUrl] = useState<string>('');
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [isExporting, setIsExporting] = useState<boolean>(false);
-    const [message, setMessage] = useState<string>('');
-    const [voices, setVoices] = useState<any[]>([]);
-    const [loadingVideoRegistered, setLoadingVideoRegistered] = useState<boolean>(false);
-    const contractAddress = "0x57A220322E44B7b42125d02385CC04816eDB5ec7"
-    const STORY_RPC_URL = 'https://aeneid.storyrpc.io'
-    const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL)
-    const storyContract = new ethers.Contract(contractAddress, storyContractAbi, readProvider)
-    const { address, isConnected } = useAccount();
-    useEffect(() => {
-        fetchVoices();
-    }, []);
-    
-    
-    const fetchVoices = async () => {
-        try {
-            // Get length of dynamic array 'assets' from storage slot 0
-            const rawLen = await readProvider.getStorage(contractAddress, 0)
-            
-            const assetCount = Number(rawLen)
-            if (!assetCount) {
-                setVoices([])
-                return
-            }
-            const promises: any[] = []
-            for (let i = 0; i < assetCount; i++) {
-                if (i != 0) {
-                    const asset = await storyContract.assets(i)
-                    const assetId = asset[0].toString()
-                    const creator = asset[1].toString()
-                    promises.push([assetId, creator])
-                }
-            }
-            setVoices(promises)
-        } catch (error) {
-            let errorMsg = "Error fetching voices: ";
-            if (error && typeof error === "object" && "message" in error) {
-            errorMsg += (error as { message: string }).message;
-            } else {
-            errorMsg += String(error);
-            }
-            console.log("errorMsg", errorMsg);
-            setVoices([])
-        }
-    }
-    const generateVideo = async () => {
-        if (!selectedVoice) {
-            setShowVoiceModal(true);
-            return;
-        }
-        if (!captionInput.trim()) {
-        alert('Please enter a caption');
+  const [videoTitle, setVideoTitle] = useState<string>("");
+  const [videoRegistered, setVideoRegistered] = useState<string | null>(null);
+  const [videoDescription, setVideoDescription] = useState<string>("");
+  const [creatorName, setCreatorName] = useState<string>("");
+  const [configurationModal, setConfigurationModal] = useState<boolean>(false);
+  const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
+  const [licenseTermsId, setLicenseTermsId] = useState<string>("");
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [captionInput, setCaptionInput] = useState<string>("");
+  const [caption, setCaption] = useState<single_word_recording[]>([]);
+  const [durationFrames, setDurationFrames] = useState<number>(0);
+  const [voiceUrl, setVoiceUrl] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [voices, setVoices] = useState<any[]>([]);
+  const [loadingVideoRegistered, setLoadingVideoRegistered] =
+    useState<boolean>(false);
+  const contractAddress = "0x57A220322E44B7b42125d02385CC04816eDB5ec7";
+  const STORY_RPC_URL = "https://aeneid.storyrpc.io";
+  const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL);
+  const storyContract = new ethers.Contract(
+    contractAddress,
+    storyContractAbi,
+    readProvider
+  );
+  const { address, isConnected } = useAccount();
+  useEffect(() => {
+    fetchVoices();
+  }, []);
+
+  const fetchVoices = async () => {
+    try {
+      // Get length of dynamic array 'assets' from storage slot 0
+      const rawLen = await readProvider.getStorage(contractAddress, 0);
+
+      const assetCount = Number(rawLen);
+      if (!assetCount) {
+        setVoices([]);
         return;
+      }
+      const promises: any[] = [];
+      for (let i = 0; i < assetCount; i++) {
+        if (i != 0) {
+          const asset = await storyContract.assets(i);
+          const assetId = asset[0].toString();
+          const creator = asset[1].toString();
+          promises.push([assetId, creator]);
         }
-        setIsLoading(true);
+      }
+      setVoices(promises);
+    } catch (error) {
+      let errorMsg = "Error fetching voices: ";
+      if (error && typeof error === "object" && "message" in error) {
+        errorMsg += (error as { message: string }).message;
+      } else {
+        errorMsg += String(error);
+      }
+      console.log("errorMsg", errorMsg);
+      setVoices([]);
+    }
+  };
+  const generateVideo = async () => {
+    if (!selectedVoice) {
+      setShowVoiceModal(true);
+      return;
+    }
+    if (!captionInput.trim()) {
+      alert("Please enter a caption");
+      return;
+    }
+    setIsLoading(true);
 
-        try {
-        const response = await fetch('/api/voice_upload', {
-            method: 'POST',
-            body: JSON.stringify({ caption: captionInput, assetId: selectedVoice }),
-        });
-        const caption_data = await response.json();
+    try {
+      const response = await fetch("/api/voice_upload", {
+        method: "POST",
+        body: JSON.stringify({ caption: captionInput, assetId: selectedVoice }),
+      });
+      const caption_data = await response.json();
 
-        setDurationFrames(
-            Number((caption_data.single_word_recordings.at(-1).end * 30).toFixed(0))
-        );
-        setCaption(caption_data.single_word_recordings);
-        setVoiceUrl(caption_data.link);
-        } catch (err) {
-        setMessage('❌ Failed to generate video.');
-        } finally {
-        setIsLoading(false);
-        }
-    };
+      setDurationFrames(
+        Number((caption_data.single_word_recordings.at(-1).end * 30).toFixed(0))
+      );
+      setCaption(caption_data.single_word_recordings);
+      setVoiceUrl(caption_data.link);
+    } catch (err) {
+      setMessage("❌ Failed to generate video.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const exportVideo = async () => {
-        setIsExporting(true);
-        setMessage('');
-        try {
-        const response = await fetch('/api/video_upload', {
-            method: 'POST',
-            body: JSON.stringify({ caption, voiceUrl, voiceId: selectedVoice, licenseTermsId, creatorName: creatorName, creatorAddress: address, title: videoTitle, description: videoDescription }),
-        });
-        const video_data = await response.json();
-        setMessage('✅ Video exported successfully!');
-        setVideoRegistered(`https://aeneid.explorer.story.foundation/ipa/${video_data.ipId}`);
-        } catch (err) {
-        setMessage('❌ Export failed.');
-        } finally {
-        setIsExporting(false);
-        }
-    };
+  const exportVideo = async () => {
+    setIsExporting(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/video_upload", {
+        method: "POST",
+        body: JSON.stringify({
+          caption,
+          voiceUrl,
+          voiceId: selectedVoice,
+          licenseTermsId,
+          creatorName: creatorName,
+          creatorAddress: address,
+          title: videoTitle,
+          description: videoDescription,
+        }),
+      });
+      const video_data = await response.json();
+      setMessage("✅ Video exported successfully!");
+      setVideoRegistered(
+        `https://aeneid.explorer.story.foundation/ipa/${video_data.ipId}`
+      );
+    } catch (err) {
+      setMessage("❌ Export failed.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-    {/* LEFT HALF */}
-    <div style={{
-      flex: 1,
-      color: 'white',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '2rem',
-      boxSizing: 'border-box',
-    }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>🎥 Reel Video Generator</h1>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundImage:
+          "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Animated background elements */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        {[
+          {
+            size: 400,
+            left: "10%",
+            top: "20%",
+            color: "rgba(251, 191, 36, 0.05)",
+            delay: 0,
+          },
+          {
+            size: 600,
+            left: "70%",
+            top: "10%",
+            color: "rgba(59, 130, 246, 0.04)",
+            delay: 2,
+          },
+          {
+            size: 500,
+            left: "50%",
+            top: "60%",
+            color: "rgba(236, 72, 153, 0.05)",
+            delay: 4,
+          },
+        ].map((orb, i) => (
+          <motion.div
+            key={i}
+            style={{
+              position: "absolute",
+              width: `${orb.size}px`,
+              height: `${orb.size}px`,
+              left: orb.left,
+              top: orb.top,
+              borderRadius: "50%",
+              backgroundImage: `radial-gradient(circle, ${orb.color} 0%, transparent 70%)`,
+              filter: "blur(60px)",
+            }}
+            animate={{
+              x: [0, 100, -50, 0],
+              y: [0, -100, 50, 0],
+              scale: [1, 1.2, 0.9, 1],
+            }}
+            transition={{
+              duration: 20 + i * 2,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+              delay: orb.delay,
+            }}
+          />
+        ))}
+      </div>
 
-      <label style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Caption Text</label>
-      <textarea
-        rows={10}
-        placeholder="Type a caption..."
-        value={captionInput}
-        onChange={(e) => setCaptionInput(e.target.value)}
+      <div
         style={{
-          padding: '0.75rem',
-          borderRadius: '8px',
-          border: '1px solid #2d3748',
-          marginBottom: '1rem',
-          width: '100%',
-          boxSizing: 'border-box',
-        }}
-      />
-      {selectedVoice == null ? (
-      <button
-        onClick={() => setShowVoiceModal(true)}
-        disabled={isLoading}
-        style={{
-          padding: '0.75rem',
-          borderRadius: '8px',
-          backgroundColor: isLoading ? '#4a5568' : '#3182ce',
-          color: '#fff',
-          border: 'none',
-          cursor: isLoading ? 'not-allowed' : 'pointer',
-          fontWeight: 600,
-          marginBottom: '1rem',
+          display: "flex",
+          width: "100vw",
+          minHeight: "100vh",
+          position: "relative",
+          zIndex: 1,
+          padding: "2rem",
+          gap: "2rem",
         }}
       >
-        {isLoading ? 'Generating...' : 'Select Voice'}
-      </button>
-      ) : (
-        <>
-            <p>Selected Voice: {selectedVoice}</p>
-            <button
-            onClick={generateVideo}
-            disabled={isLoading}
-            style={{
-                padding: '0.75rem',
-                borderRadius: '8px',
-                backgroundColor: isLoading ? '#4a5568' : '#3182ce',
-                color: '#fff',
-                border: 'none',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                marginBottom: '1rem',
-            }}
-            >
-            Generate Video
-            </button>
-        </>
-
-      )}
-      {caption.length > 0 && (
-        <button
-          onClick={() => setConfigurationModal(true)}
-          disabled={isExporting}
-          style={{
-            padding: '0.75rem',
-            borderRadius: '8px',
-            backgroundColor: isExporting ? '#4a5568' : '#38a169',
-            color: '#fff',
-            border: 'none',
-            cursor: isExporting ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
-            marginBottom: '1rem',
-          }}
-        >
-          {isExporting ? 'Exporting...' : 'Export Video'}
-        </button>
-      )}
-
-      {message && (
-        <p style={{
-          marginTop: 'auto',
-          color: message.startsWith('❌') ? '#e53e3e' : '#9ae6b4',
-          fontWeight: 600,
-        }}>
-          {message}
-        </p>
-      )}
-    </div>
-
-    {/* RIGHT HALF */}
-    <div style={{
-      flex: 1,
-      background: '#edf2f7',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-      boxSizing: 'border-box',
-    }}>
-      {caption.length > 0 ? (
-        <Player
-          component={RemotionVideo}
-          durationInFrames={durationFrames}
-          compositionWidth={300}
-          compositionHeight={450}
-          fps={30}
-          inputProps={{ caption, voiceUrl }}
-          controls
-        />
-      ) : (
-        <p style={{
-          color: '#718096',
-          width: '300px',
-          height: '450px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          No video generated yet
-        </p>
-      )}
-    </div>
-
-    {/* 3) AnimatePresence Voice-Model Modal */}
-    <AnimatePresence>
-      {showVoiceModal && (
+        {/* LEFT HALF */}
         <motion.div
-          key="voice-modal"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
           style={{
-            position: 'fixed',
-            top: 0, 
-            left: 0, 
-            width: '100vw', 
-            height: '100vh',
-            background: 'rgba(0,0,0,0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "rgba(255, 255, 255, 0.03)",
+            backdropFilter: "blur(20px)",
+            borderRadius: "24px",
+            padding: "2.5rem",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
           }}
         >
           <motion.div
-            initial={{ scale: 0.8 }}
+            initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            exit={{ scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
             style={{
-              background: '#fff',
-              borderRadius: '12px',
-              padding: '2rem',
-              width: '60vw',
-              maxWidth: '600px',
-              boxSizing: 'border-box',
-              overflowY: 'auto',
-              maxHeight: '80vh',
-              marginTop: '2rem'
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "12px",
+              backgroundColor: "rgba(251, 191, 36, 0.1)",
+              padding: "8px 20px",
+              borderRadius: "50px",
+              marginBottom: "1.5rem",
+              border: "1px solid rgba(251, 191, 36, 0.2)",
+              alignSelf: "flex-start",
             }}
           >
-            <h1 style={{ marginTop: '1rem', fontSize: '2rem', color: 'black', textAlign: 'center' }}>Select Voice Model</h1>
-            {voices.map((voice) => (
-              <div
-                key={voice}
-                style={{
-                  display: 'flex',
-                  width: '100%',
-                  padding: '0.75rem',
-                  marginBottom: '0.5rem',
-                  borderRadius: '8px',
-                  border: '1px solid #ccc',
-                  background: '#f7fafc',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <VoiceSelection assetId={voice[1]} creator={voice[0]} setSelectedVoice={setSelectedVoice} setShowModalInside={setShowVoiceModal} setLicenseTermsId={setLicenseTermsId}  />
-              </div>
-            ))}
-            <button
-              onClick={() => setShowVoiceModal(false)}
+            <Video size={20} color="#fbbf24" />
+            <span style={{ color: "#fbbf24", fontWeight: "600" }}>
+              Reel Creator
+            </span>
+          </motion.div>
+
+          <h1
+            style={{
+              fontSize: "2.5rem",
+              fontWeight: "700",
+              marginBottom: "2rem",
+              backgroundImage:
+                "linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #dc2626 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "0 0 40px rgba(251, 191, 36, 0.5)",
+            }}
+          >
+            Reel Video Generator
+          </h1>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "1rem",
+              color: "#fff",
+              fontSize: "1.125rem",
+              fontWeight: "600",
+            }}
+          >
+            <FileText size={20} color="#fbbf24" />
+            Caption Text
+          </label>
+          <textarea
+            rows={8}
+            placeholder="Type a caption..."
+            value={captionInput}
+            onChange={(e) => setCaptionInput(e.target.value)}
+            style={{
+              padding: "1rem",
+              borderRadius: "16px",
+              backgroundColor: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              marginBottom: "1.5rem",
+              width: "100%",
+              boxSizing: "border-box",
+              color: "#fff",
+              fontSize: "1rem",
+              outline: "none",
+              transition: "all 0.3s ease",
+              resize: "vertical",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "rgba(251, 191, 36, 0.5)";
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.08)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+            }}
+          />
+
+          {selectedVoice == null ? (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowVoiceModal(true)}
+              disabled={isLoading}
               style={{
-                marginTop: '1rem',
-                background: 'transparent',
-                border: 'none',
-                color: '#718096',
-                cursor: 'pointer'
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "1rem 2rem",
+                borderRadius: "50px",
+                backgroundImage: isLoading
+                  ? "none"
+                  : "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                backgroundColor: isLoading
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "transparent",
+                color: "#fff",
+                border: "none",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                fontSize: "1.125rem",
+                fontWeight: 600,
+                marginBottom: "1rem",
+                boxShadow: isLoading
+                  ? "none"
+                  : "0 8px 24px rgba(251, 191, 36, 0.4)",
+                transition: "all 0.3s ease",
               }}
             >
-              Cancel
-            </button>
-          </motion.div>
+              <Mic size={24} />
+              {isLoading ? "Generating..." : "Select Voice"}
+            </motion.button>
+          ) : (
+            <>
+              <div
+                style={{
+                  backgroundColor: "rgba(251, 191, 36, 0.1)",
+                  borderRadius: "12px",
+                  padding: "1rem",
+                  marginBottom: "1rem",
+                  border: "1px solid rgba(251, 191, 36, 0.2)",
+                }}
+              >
+                <p
+                  style={{
+                    color: "#fbbf24",
+                    fontWeight: "600",
+                    margin: 0,
+                  }}
+                >
+                  Selected Voice: {selectedVoice}
+                </p>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={generateVideo}
+                disabled={isLoading}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "1rem 2rem",
+                  borderRadius: "50px",
+                  backgroundImage: isLoading
+                    ? "none"
+                    : "linear-gradient(135deg, #3182ce, #2563eb)",
+                  backgroundColor: isLoading
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "transparent",
+                  color: "#fff",
+                  border: "none",
+                  cursor: isLoading ? "not-allowed" : "pointer",
+                  fontSize: "1.125rem",
+                  fontWeight: 600,
+                  marginBottom: "1rem",
+                  boxShadow: isLoading
+                    ? "none"
+                    : "0 8px 24px rgba(49, 130, 206, 0.4)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <Play size={24} />
+                Generate Video
+              </motion.button>
+            </>
+          )}
+
+          {caption.length > 0 && (
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setConfigurationModal(true)}
+              disabled={isExporting}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "1rem 2rem",
+                borderRadius: "50px",
+                backgroundImage: isExporting
+                  ? "none"
+                  : "linear-gradient(135deg, #10b981, #059669)",
+                backgroundColor: isExporting
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "transparent",
+                color: "#fff",
+                border: "none",
+                cursor: isExporting ? "not-allowed" : "pointer",
+                fontSize: "1.125rem",
+                fontWeight: 600,
+                marginBottom: "1rem",
+                boxShadow: isExporting
+                  ? "none"
+                  : "0 8px 24px rgba(16, 185, 129, 0.4)",
+                transition: "all 0.3s ease",
+              }}
+            >
+              <Upload size={24} />
+              {isExporting ? "Exporting..." : "Export Video"}
+            </motion.button>
+          )}
+
+          {message && (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                marginTop: "auto",
+                color: message.startsWith("❌") ? "#ef4444" : "#10b981",
+                fontWeight: 600,
+                fontSize: "1.125rem",
+                textAlign: "center",
+                padding: "1rem",
+                backgroundColor: message.startsWith("❌")
+                  ? "rgba(239, 68, 68, 0.1)"
+                  : "rgba(16, 185, 129, 0.1)",
+                borderRadius: "12px",
+                border: `1px solid ${
+                  message.startsWith("❌")
+                    ? "rgba(239, 68, 68, 0.2)"
+                    : "rgba(16, 185, 129, 0.2)"
+                }`,
+              }}
+            >
+              {message}
+            </motion.p>
+          )}
         </motion.div>
-      )}
-    </AnimatePresence>
-    <AnimatePresence>
+
+        {/* RIGHT HALF */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(255, 255, 255, 0.03)",
+            backdropFilter: "blur(20px)",
+            borderRadius: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2rem",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          }}
+        >
+          {caption.length > 0 ? (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              style={{
+                borderRadius: "20px",
+                overflow: "hidden",
+                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              <Player
+                component={RemotionVideo}
+                durationInFrames={durationFrames}
+                compositionWidth={300}
+                compositionHeight={450}
+                fps={30}
+                inputProps={{ caption, voiceUrl }}
+                controls
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              animate={{
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              style={{
+                width: "300px",
+                height: "450px",
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                borderRadius: "20px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "1rem",
+                border: "2px dashed rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              <Video size={48} color="rgba(255, 255, 255, 0.3)" />
+              <p
+                style={{
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontSize: "1.125rem",
+                  textAlign: "center",
+                  padding: "0 2rem",
+                }}
+              >
+                No video generated yet
+              </p>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* 3) AnimatePresence Voice-Model Modal */}
+      <AnimatePresence>
+        {showVoiceModal && (
+          <motion.div
+            key="voice-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 100,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              style={{
+                backgroundColor: "#1e1b4b",
+                backgroundImage: "linear-gradient(135deg, #1e1b4b, #312e81)",
+                borderRadius: "24px",
+                padding: "2.5rem",
+                width: "60vw",
+                maxWidth: "600px",
+                boxSizing: "border-box",
+                overflowY: "auto",
+                maxHeight: "80vh",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+              }}
+            >
+              <motion.div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "2rem",
+                }}
+              >
+                <h1
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: "700",
+                    color: "#fff",
+                    margin: 0,
+                  }}
+                >
+                  Select Voice Model
+                </h1>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowVoiceModal(false)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "none",
+                    borderRadius: "12px",
+                    padding: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  <X size={24} color="rgba(255, 255, 255, 0.6)" />
+                </motion.button>
+              </motion.div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1rem",
+                }}
+              >
+                {voices.map((voice) => (
+                  <motion.div
+                    key={voice}
+                    whileHover={{ scale: 1.02 }}
+                    style={{
+                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      borderRadius: "16px",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      overflow: "hidden",
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    <VoiceSelection
+                      assetId={voice[1]}
+                      creator={voice[0]}
+                      setSelectedVoice={setSelectedVoice}
+                      setShowModalInside={setShowVoiceModal}
+                      setLicenseTermsId={setLicenseTermsId}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {configurationModal && (
           <motion.div
             key="config-modal"
@@ -336,15 +669,16 @@ function VideoPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
-              position: 'fixed',
+              position: "fixed",
               top: 0,
               left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'rgba(0,0,0,0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               zIndex: 150,
             }}
           >
@@ -353,160 +687,446 @@ function VideoPage() {
               animate={{ scale: 1 }}
               exit={{ scale: 0.8 }}
               style={{
-                background: '#fff',
-                borderRadius: '12px',
-                padding: '2rem',
-                width: '90%',
-                maxWidth: '500px',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
+                backgroundColor: "#1e1b4b",
+                backgroundImage: "linear-gradient(135deg, #1e1b4b, #312e81)",
+                borderRadius: "24px",
+                padding: "2.5rem",
+                width: "90%",
+                maxWidth: "500px",
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1.5rem",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
               }}
             >
-              <h2 style={{ textAlign: 'center' }}>Video Configuration</h2>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: "1.75rem",
+                    fontWeight: "700",
+                    color: "#fff",
+                    margin: 0,
+                  }}
+                >
+                  Video Configuration
+                </h2>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setConfigurationModal(false)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    border: "none",
+                    borderRadius: "12px",
+                    padding: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  <X size={24} color="rgba(255, 255, 255, 0.6)" />
+                </motion.button>
+              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontWeight: 600 }}>Title</label>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    color: "#fff",
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <Tag size={18} color="#fbbf24" />
+                  Title
+                </label>
                 <input
                   type="text"
                   value={videoTitle}
                   onChange={(e) => setVideoTitle(e.target.value)}
                   placeholder="Enter video title"
                   style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
+                    padding: "0.75rem 1rem",
+                    borderRadius: "12px",
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "#fff",
+                    fontSize: "1rem",
+                    outline: "none",
+                    transition: "all 0.3s ease",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(251, 191, 36, 0.5)";
+                    e.target.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.08)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                    e.target.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.05)";
                   }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontWeight: 600 }}>Description</label>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    color: "#fff",
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <FileText size={18} color="#fbbf24" />
+                  Description
+                </label>
                 <textarea
                   rows={4}
                   value={videoDescription}
                   onChange={(e) => setVideoDescription(e.target.value)}
                   placeholder="Enter description..."
                   style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
+                    padding: "0.75rem 1rem",
+                    borderRadius: "12px",
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "#fff",
+                    fontSize: "1rem",
+                    outline: "none",
+                    resize: "vertical",
+                    transition: "all 0.3s ease",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(251, 191, 36, 0.5)";
+                    e.target.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.08)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                    e.target.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.05)";
                   }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontWeight: 600 }}>Creator’s Name</label>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    color: "#fff",
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <User size={18} color="#fbbf24" />
+                  Creator's Name
+                </label>
                 <input
                   type="text"
                   value={creatorName}
                   onChange={(e) => setCreatorName(e.target.value)}
                   placeholder="Your name"
                   style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    border: '1px solid #ccc',
+                    padding: "0.75rem 1rem",
+                    borderRadius: "12px",
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "#fff",
+                    fontSize: "1rem",
+                    outline: "none",
+                    transition: "all 0.3s ease",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(251, 191, 36, 0.5)";
+                    e.target.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.08)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                    e.target.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.05)";
                   }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "1rem",
+                  marginTop: "1rem",
+                }}
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setConfigurationModal(false)}
                   style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    background: 'transparent',
-                    border: '1px solid #718096',
-                    color: '#718096',
-                    cursor: 'pointer',
+                    padding: "0.75rem 2rem",
+                    borderRadius: "50px",
+                    background: "transparent",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    color: "rgba(255, 255, 255, 0.8)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    transition: "all 0.3s ease",
                   }}
                 >
                   Cancel
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     exportVideo();
                     setConfigurationModal(false);
                   }}
                   disabled={!videoTitle.trim() || !creatorName.trim()}
                   style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    background: videoTitle.trim() && creatorName.trim() ? '#38a169' : '#a0aec0',
-                    color: '#fff',
-                    border: 'none',
-                    cursor: videoTitle.trim() && creatorName.trim() ? 'pointer' : 'not-allowed',
+                    padding: "0.75rem 2rem",
+                    borderRadius: "50px",
+                    backgroundImage:
+                      videoTitle.trim() && creatorName.trim()
+                        ? "linear-gradient(135deg, #10b981, #059669)"
+                        : "none",
+                    backgroundColor:
+                      videoTitle.trim() && creatorName.trim()
+                        ? "transparent"
+                        : "rgba(255, 255, 255, 0.1)",
+                    color: "#fff",
+                    border: "none",
+                    cursor:
+                      videoTitle.trim() && creatorName.trim()
+                        ? "pointer"
+                        : "not-allowed",
+                    fontWeight: 600,
+                    boxShadow:
+                      videoTitle.trim() && creatorName.trim()
+                        ? "0 8px 24px rgba(16, 185, 129, 0.4)"
+                        : "none",
+                    transition: "all 0.3s ease",
                   }}
                 >
-                  Save
-                </button>
+                  Save & Export
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {videoRegistered && (
-            <motion.div
+          <motion.div
             key="video-registered"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
-                position: 'fixed',
-                top: 0, left: 0, width: '100vw', height: '100vh',
-                background: 'rgba(10, 0, 30, 0.85)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 9999,
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(10, 0, 30, 0.85)",
+              backdropFilter: "blur(20px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
             }}
-            >
+          >
             <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.8 }}
-                style={{
-                background: 'linear-gradient(135deg, #1e003e 0%, #26004b 100%)',
-                border: '2px solid #6f00ff',
-                boxShadow: '0 0 20px #6f00ff, inset 0 0 10px #00fff0',
-                borderRadius: '12px',
-                padding: '2rem',
-                maxWidth: '400px',
-                width: '90%',
-                color: '#e0e0ff',
-                textAlign: 'center',
-                }}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              style={{
+                backgroundColor: "#1e1b4b",
+                backgroundImage: "linear-gradient(135deg, #1e1b4b, #312e81)",
+                border: "2px solid rgba(111, 0, 255, 0.3)",
+                boxShadow:
+                  "0 0 40px rgba(111, 0, 255, 0.4), inset 0 0 20px rgba(0, 255, 240, 0.1)",
+                borderRadius: "24px",
+                padding: "3rem",
+                maxWidth: "450px",
+                width: "90%",
+                color: "#e0e0ff",
+                textAlign: "center",
+                position: "relative",
+                overflow: "hidden",
+              }}
             >
-                <h1 style={{
-                marginBottom: '1rem',
-                fontSize: '1.75rem',
-                color: '#00fff0',
-                textShadow: '0 0 8px #00fff0, 0 0 20px #6f00ff',
-                }}>
-                🎬 Video Registered
-                </h1>
-                <div onClick={() => window.open(videoRegistered, '_blank')} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <p style={{
-                    fontSize: '1rem',
-                    lineHeight: 1.4,
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    padding: '1rem',
-                    borderRadius: '8px',
-                    border: '1px solid #00fff0',
-                    textShadow: '0 0 4px #00fff0',
-                    }}>
-                    View on Explorer
-                    </p>
-                </div>
+              {/* Success animation background */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  overflow: "hidden",
+                  borderRadius: "24px",
+                }}
+              >
+                {[...Array(12)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      width: "6px",
+                      height: "6px",
+                      backgroundColor: [
+                        "#fbbf24",
+                        "#f59e0b",
+                        "#10b981",
+                        "#3b82f6",
+                      ][i % 4],
+                      borderRadius: "50%",
+                      left: `${Math.random() * 100}%`,
+                      top: "-10px",
+                    }}
+                    animate={{
+                      y: [0, 500],
+                      opacity: [1, 0],
+                    }}
+                    transition={{
+                      duration: 2 + Math.random(),
+                      delay: Math.random() * 0.5,
+                      ease: "linear",
+                    }}
+                  />
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  backgroundImage: "linear-gradient(135deg, #10b981, #059669)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 1.5rem",
+                  boxShadow: "0 0 40px rgba(16, 185, 129, 0.5)",
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                <Sparkles size={40} color="#fff" />
+              </motion.div>
+
+              <h1
+                style={{
+                  fontSize: "2rem",
+                  fontWeight: "700",
+                  color: "#fff",
+                  marginBottom: "1rem",
+                  textShadow: "0 0 20px rgba(0, 255, 240, 0.5)",
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                Video Registered!
+              </h1>
+
+              <p
+                style={{
+                  fontSize: "1.125rem",
+                  color: "rgba(255, 255, 255, 0.8)",
+                  marginBottom: "2rem",
+                  lineHeight: 1.6,
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                Your video has been successfully registered on Story Protocol
+              </p>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.open(videoRegistered, "_blank")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  width: "100%",
+                  padding: "1rem",
+                  backgroundImage: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                  borderRadius: "16px",
+                  border: "none",
+                  color: "#fff",
+                  fontSize: "1.125rem",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+                  transition: "all 0.3s ease",
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                View on Explorer
+                <SquareArrowOutUpRight size={20} />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setVideoRegistered(null)}
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "8px",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  zIndex: 2,
+                }}
+              >
+                <X size={24} color="rgba(255, 255, 255, 0.6)" />
+              </motion.button>
             </motion.div>
-            </motion.div>
+          </motion.div>
         )}
-    </AnimatePresence>
-  </div>
+      </AnimatePresence>
+    </div>
   );
-  
-  
 }
 
 export default VideoPage;
