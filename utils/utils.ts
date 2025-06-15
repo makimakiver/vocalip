@@ -1,9 +1,8 @@
 import { LicenseTerms, LicensingConfig, WIP_TOKEN_ADDRESS } from '@story-protocol/core-sdk'
 import { Address, parseEther, zeroAddress } from 'viem'
-import dotenv from 'dotenv'
 import { networkInfo } from './config'
 
-dotenv.config()
+
 
 // Export contract addresses with appropriate defaults based on network
 export const NFTContractAddress: Address =
