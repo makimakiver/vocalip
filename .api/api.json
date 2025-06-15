@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "apis": [
+    {
+      "identifier": "yakoa-ip-api",
+      "source": "@yakoa-ip-api/v1.0#jq323rmb1a6xe3",
+      "integrity": "sha512-vxXBV2ZCE+vLTLks9y/9TMvoP7HPkgeQDzbeshYCrdGGJ/kjGu3qnGOLZXeyTTKn2YKIlRxGyvvJzjiVPbDkTw==",
+      "installerVersion": "6.1.3"
+    }
+  ]
+}

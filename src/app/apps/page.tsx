@@ -3,6 +3,7 @@ import React from 'react';
 
 interface AppCard {
   title: string;
+  image: string;
   description: string;
   link?: string;
 }
@@ -10,6 +11,7 @@ interface AppCard {
 const apps: AppCard[] = [
   {
     title: 'Reel Video Creator',
+    image: '/BrainRIP.png',
     description:
       'Create reels with voices on this platform and profits will be shared with you and the creator of the voice.',
     link: '/brain-rot',
@@ -33,7 +35,8 @@ export default function AppListPage() {
           fontWeight: 700,
           marginBottom: '1.5rem',
           textAlign: 'center',
-          color: '#2d3748',
+          color: 'white',
+
         }}
       >
         dApps
@@ -71,6 +74,7 @@ export default function AppListPage() {
               >
                 {app.title}
               </h2>
+              <img src={app.image} alt={app.title} style={{ width: '70%', height: 'auto', borderRadius: '8px', alignSelf: 'center' }} />
               <p
                 style={{
                   fontSize: '1rem',
@@ -96,7 +100,7 @@ export default function AppListPage() {
                   fontWeight: 500,
                 }}
               >
-                Learn More
+                Go to app
               </a>
             )}
           </div>

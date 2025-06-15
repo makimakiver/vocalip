@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import "./AssetCard.css";
-import { client } from "../../../utils/config";
+import { account, client } from "../../../utils/config";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -17,6 +17,8 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
+import { useAccount, useWalletClient } from "wagmi";
+import { Address } from "viem";
 type AssetCardProps = {
   assetId: string;
   creator: string;
@@ -68,6 +70,7 @@ export default function AssetCard({
   // New state for privacy toggle
   const [isPublic, setIsPublic] = useState(true);
   const [privacyLoading, setPrivacyLoading] = useState(false);
+  const [buttonText, setButtonText] = useState("");
 
   useEffect(() => {
     if (disputeType !== DisputeType.None) {
@@ -108,7 +111,30 @@ export default function AssetCard({
         meta = null;
       }
       setMetaData(meta);
+      const response = await fetch(
+        `https://api.storyapis.com/api/v3/detailed-ip-license-terms`,
+        {
+          method: "POST",
+          headers: {
+            "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
+            "X-Chain": "story-aeneid",
+          },
+          body: `{"options":{"where":{"ipIds":["${assetId}"]}}}`
+        }
+      );
 
+      const priceData = await response.json();
+      const rawMintingFee = priceData.data[0].terms.defaultMintingFee;
+      if (rawMintingFee == null || rawMintingFee == undefined){
+        throw new Error("Minting fee is null");
+      }
+      if (rawMintingFee == 0){
+        setButtonText("Buy licence for Free!!");
+      }
+      else{
+        const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
+        setButtonText("Buy licence for " + mintingFee + " IP");
+      }
       // Load privacy state from API
       try {
         const privacyRes = await fetch(
@@ -195,6 +221,68 @@ export default function AssetCard({
     return <div className="asset-card loading">Loading asset...</div>;
   }
 
+  const mintLicense = async () => {
+      const res = await fetch(
+        `https://api.storyapis.com/api/v3/detailed-ip-license-terms`,
+        {
+          method: "POST",
+          headers: {
+            "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
+            "X-Chain": "story-aeneid",
+          },
+          body: `{"options":{"where":{"ipIds":["${assetId}"]}}}`
+        }
+      );
+      const data = await res.json();
+      const licenseTerms = data.data[0];
+      console.log(licenseTerms);
+      // const addr = useWalletClient().data?.account.address;
+      console.log(licenseTerms.id);
+      console.log(client.license);
+      const rawMintingFee = licenseTerms.terms.defaultMintingFee;
+      
+      if(rawMintingFee == null || rawMintingFee == undefined){
+        throw new Error("Minting fee is null");
+      }
+      if(rawMintingFee == 0){
+        const response = await client.license.mintLicenseTokens({
+          licenseTermsId: licenseTerms.id,
+          licensorIpId: assetId as Address,
+          receiver: creatorAddr as Address, // optional
+          amount: 1,
+          maxMintingFee: BigInt(0), // disabled
+          maxRevenueShare: 100, // default
+        });
+        console.log(response);
+        console.log(
+          `License Token minted at transaction hash ${response.txHash}, License IDs: ${response.licenseTokenIds}`
+        );
+        setButtonText("Buy licence for Free!!");
+        return;
+      }
+      const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
+      console.log({
+        licenseTermsId: licenseTerms.id,
+        licensorIpId: assetId as `0x${string}`,
+        receiver: creatorAddr as `0x${string}`, // optional
+        amount: 1,
+        maxMintingFee: mintingFee, // disabled
+        maxRevenueShare: 100, // default
+      });
+      const response = await client.license.mintLicenseTokens({
+        licenseTermsId: licenseTerms.id,
+        licensorIpId: assetId as `0x${string}`,
+        receiver: creatorAddr as `0x${string}`, // optional
+        amount: 1,
+        maxMintingFee: 1, // disabled
+        maxRevenueShare: 100, // default
+      });
+      console.log(response);
+      console.log(
+        `License Token minted at transaction hash ${response.txHash}, License IDs: ${response.licenseTokenIds}`
+      );
+      setButtonText("Buy licence for " + mintingFee + "IP");
+  };
   const raiseDispute = async () => {
     if (disputeType === DisputeType.None) {
       alert("Please select a dispute type");
@@ -274,6 +362,32 @@ export default function AssetCard({
           onPause={handleAudioEnded}
           onEnded={handleAudioEnded}
         />
+        <div>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              mintLicense();
+            }}
+            style={{
+              position: 'relative',
+              padding: '0.6rem 1.4rem',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              color: '#fff',
+              background: 'linear-gradient(135deg, #ff00cc, #3333ff)',
+              border: '2px solid transparent',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              overflow: 'hidden',
+              transition: 'color 0.3s ease, box-shadow 0.3s ease',
+              boxShadow: '0 0 5px #ff00cc, 0 0 10px #3333ff, inset 0 0 5px rgba(255,255,255,0.2)',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+            }}
+          >
+            {buttonText}
+          </button>
+        </div>
 
         {/* Privacy Toggle for owners */}
         {isOwner && (

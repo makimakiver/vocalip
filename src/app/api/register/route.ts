@@ -6,6 +6,7 @@ import { client, account, networkInfo } from '../../../../utils/config'
 import { uploadJSONToIPFS } from '../../../../utils/functions/uploadToIpfs'
 import { createHash } from 'crypto'
 import { IpMetadata } from '@story-protocol/core-sdk'
+import yakoaIpApi from '@api/yakoa-ip-api';
 
 export async function POST(request: Request) {
         // 1. Set up your IP Metadata
@@ -86,5 +87,46 @@ export async function POST(request: Request) {
         'IPA ID': response.ipId,
     })
     console.log(`View on the explorer: ${networkInfo.protocolExplorer}/ipa/${response.ipId}`)
-    return NextResponse.json({ link: `${networkInfo.protocolExplorer}/ipa/${response.ipId}`, txHash: response.txHash, ipId: response.ipId })
+
+    // Prepare the response to return to the client
+    const result = {
+        link: `${networkInfo.protocolExplorer}/ipa/${response.ipId}`,
+        txHash: response.txHash,
+        ipId: response.ipId
+    };
+
+    return NextResponse.json(result);
+    // // Return the main registration result immediately
+    // const mainResponse = NextResponse.json(result);
+
+    // // Fire-and-forget Yakoa API call (does not block main response)
+    // (async () => {
+    //     try {
+    //         yakoaIpApi.auth('Sci7PLXRZL8Ii3JJVXyqT4cUBajCn0rMLbiAJnM1');
+    //         if (!response.txHash) {
+    //             throw new Error('Transaction hash is undefined');
+    //         }
+    //         await yakoaIpApi.tokenTokenPost({
+    //             registration_tx: {
+    //                 hash: response.txHash,
+    //                 block_number: 13435572,
+    //                 timestamp: '2021-10-17T01:00:19Z'
+    //             },
+    //             metadata: { name: name },
+    //             id: response.ipId ?? '',
+    //             creator_id: creator_address,
+    //             media: [
+    //                 {
+    //                     media_id: 'voice',
+    //                     url: voiceUri
+    //                 }
+    //             ]
+    //         });
+    //         console.log('Yakoa API call succeeded');
+    //     } catch (err) {
+    //         console.error('Yakoa API call failed:', err);
+    //     }
+    // })();
+
+    // return mainResponse;
 }

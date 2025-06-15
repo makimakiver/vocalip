@@ -1,0 +1,4165 @@
+{
+  "info": {
+    "title": "Yakoa IP API",
+    "version": "0.0.1",
+    "summary": "Comprehensive API for Yakoa IP management, including infringement detection and authorization services.",
+    "description": "The Yakoa IP API offers a robust suite of tools for managing intellectual property. It allows for the registration and verification of brands and creators, and the association of tokens (like NFTs) with these entities. Key features include checking digital assets for potential infringements against registered IP, and managing authorization flows for IP usage. This API is essential for platforms and individuals looking to protect and monetize their intellectual property in the digital realm."
+  },
+  "openapi": "3.1.0",
+  "servers": [
+    {
+      "url": "https://{subdomain}.ip-api-sandbox.yakoa.io/{network}",
+      "variables": {
+        "subdomain": {
+          "default": "docs-demo"
+        },
+        "network": {
+          "default": "docs-demo"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/token/{token_id}": {
+      "get": {
+        "tags": [
+          "Token"
+        ],
+        "summary": "Get Token",
+        "description": "### Retrieves comprehensive details for a specific Token.\n\nThis endpoint fetches all stored information for a Token, identified by its unique `token_id` (which includes the `chain` and `contract_address`).\nThe response includes:\n-   The Token's `id` (contract address and on-chain token ID).\n-   `registration_tx`: Details of the transaction that registered or last updated this Token.\n-   `creator_id`: The identifier of the Creator associated with this Token.\n-   `metadata`: The metadata object provided during registration.\n-   `media`: An array of media items linked to this Token, including their `media_id`, `url`, `hash`, and `fetch_status`.\n-   `license_parents`: Information about any parent Tokens from which this Token might inherit rights.\n-   `token_authorizations`: A list of authorizations granted directly to this Token by Brands.\n-   `infringements`: The latest infringement check results for this Token. (See [Infringements & Credits](../../docs/INFRINGEMENTS_AND_CREDITS.md) for details).\n\n**Path Parameters:**\n-   `token_id` (string, required): The unique identifier of the Token, typically in the format `contract_address:token_id` or just `contract_address` for ERC721 tokens where the on-chain token ID is part of the path.\n-   `network` (string, required, from parent router): The blockchain network the Token is associated with.\n\n",
+        "operationId": "TokenTokenIdTokenGet",
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+              "examples": [
+                "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              ]
+            },
+            "required": true,
+            "deprecated": false,
+            "examples": {
+              "token_id-example-1": {
+                "summary": "Doodle",
+                "value": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "properties": {
+                        "chain": {
+                          "type": "string"
+                        },
+                        "contract_address": {
+                          "type": "string"
+                        },
+                        "token_id": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "chain",
+                        "contract_address"
+                      ],
+                      "title": "TokenID"
+                    },
+                    "registration_tx": {
+                      "properties": {
+                        "hash": {
+                          "type": "string",
+                          "maxLength": 32,
+                          "minLength": 32,
+                          "contentEncoding": "utf-8"
+                        },
+                        "block_number": {
+                          "type": "integer"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "chain": {
+                          "type": "string",
+                          "enum": [
+                            "story-mainnet",
+                            "story-aeneid",
+                            "story-illiad",
+                            "story-odyssey"
+                          ],
+                          "title": "Chain"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "block_number",
+                        "chain",
+                        "hash",
+                        "timestamp"
+                      ],
+                      "title": "Transaction"
+                    },
+                    "creator_id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "metadata": {
+                      "type": "object"
+                    },
+                    "license_parents": {
+                      "items": {
+                        "properties": {
+                          "parent_token_id": {
+                            "properties": {
+                              "chain": {
+                                "type": "string"
+                              },
+                              "contract_address": {
+                                "type": "string"
+                              },
+                              "token_id": {
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "type": "object",
+                            "required": [
+                              "chain",
+                              "contract_address"
+                            ],
+                            "title": "TokenID"
+                          },
+                          "license_id": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "license_id",
+                          "parent_token_id"
+                        ],
+                        "title": "ParentToken"
+                      },
+                      "type": "array",
+                      "default": []
+                    },
+                    "token_authorizations": {
+                      "items": {
+                        "properties": {
+                          "brand_id": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "brand_name": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "data": {
+                            "oneOf": [
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "email",
+                                    "default": "email"
+                                  },
+                                  "email_address": {
+                                    "type": "string",
+                                    "format": "email"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "email_address"
+                                ],
+                                "title": "EmailAuthorization"
+                              },
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "false_positive",
+                                    "default": "false_positive"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [],
+                                "title": "FalsePositive"
+                              }
+                            ]
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "data"
+                        ],
+                        "title": "Authorization"
+                      },
+                      "type": "array",
+                      "default": []
+                    },
+                    "creator_authorizations": {
+                      "items": {
+                        "properties": {
+                          "brand_id": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "brand_name": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "data": {
+                            "oneOf": [
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "email",
+                                    "default": "email"
+                                  },
+                                  "email_address": {
+                                    "type": "string",
+                                    "format": "email"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "email_address"
+                                ],
+                                "title": "EmailAuthorization"
+                              },
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "false_positive",
+                                    "default": "false_positive"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [],
+                                "title": "FalsePositive"
+                              }
+                            ]
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "data"
+                        ],
+                        "title": "Authorization"
+                      },
+                      "type": "array",
+                      "default": []
+                    },
+                    "media": {
+                      "items": {
+                        "properties": {
+                          "media_id": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "url"
+                              },
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "string",
+                                "format": "url"
+                              }
+                            ]
+                          },
+                          "hash": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "trust_reason": {
+                            "oneOf": [
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "trusted_platform",
+                                    "default": "trusted_platform"
+                                  },
+                                  "platform_name": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "platform_name"
+                                ],
+                                "title": "TrustedPlatformTrustReason"
+                              },
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "no_licenses",
+                                    "default": "no_licenses"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [],
+                                "title": "NoLicensesTrustReason"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "fetch_status": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "failed",
+                                  "pending",
+                                  "succeeded",
+                                  "hash_mismatch",
+                                  "trusted"
+                                ],
+                                "title": "FetchStatus"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "uri_id": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "media_id",
+                          "url"
+                        ],
+                        "title": "Media"
+                      },
+                      "type": "array"
+                    },
+                    "infringements": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "const": "pending",
+                              "default": "pending"
+                            },
+                            "reasons": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "reasons"
+                          ],
+                          "title": "PendingTokenInfringements"
+                        },
+                        {
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "const": "failed",
+                              "default": "failed"
+                            },
+                            "reasons": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "reasons"
+                          ],
+                          "title": "FailedTokenInfringements"
+                        },
+                        {
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "const": "succeeded",
+                              "default": "succeeded"
+                            },
+                            "result": {
+                              "type": "string",
+                              "enum": [
+                                "infringement",
+                                "authorized",
+                                "no_infringement",
+                                "not_checked"
+                              ],
+                              "title": "TokenInfringementsResult"
+                            },
+                            "in_network_infringements": {
+                              "items": {
+                                "properties": {
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "media": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "token": {
+                                    "properties": {
+                                      "chain": {
+                                        "type": "string"
+                                      },
+                                      "contract_address": {
+                                        "type": "string"
+                                      },
+                                      "token_id": {
+                                        "oneOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type": "object",
+                                    "required": [
+                                      "chain",
+                                      "contract_address"
+                                    ],
+                                    "title": "TokenID"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "media",
+                                  "status",
+                                  "token"
+                                ],
+                                "title": "InNetworkInfringements"
+                              },
+                              "type": "array"
+                            },
+                            "external_infringements": {
+                              "items": {
+                                "properties": {
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "media": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "brand": {
+                                    "type": "string"
+                                  },
+                                  "brand_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "brand",
+                                  "brand_id",
+                                  "media",
+                                  "status"
+                                ],
+                                "title": "ExternalInfringements"
+                              },
+                              "type": "array"
+                            },
+                            "credits": {
+                              "type": "object"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "credits",
+                            "external_infringements",
+                            "in_network_infringements",
+                            "result"
+                          ],
+                          "title": "SucceededTokenInfringements"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "media",
+                    "metadata",
+                    "registration_tx"
+                  ],
+                  "title": "Token"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/token": {
+      "post": {
+        "tags": [
+          "Token"
+        ],
+        "summary": "Register Token",
+        "description": "### Registers a new Token or registers new metadata for an existing Token.\n\nThis is the primary endpoint for introducing Token data into the Yakoa IP system or modifying it.\nWhen you `POST` data to this endpoint:\n1.  The system checks if a Token with the given `id` (contract address and on-chain token ID, on the specified `chain`) already exists.\n2.  **If new:** The Token is registered with all provided details:\n    -   `registration_tx`: Transaction details of its creation/minting.\n    -   `creator_id`: The associated Creator.\n    -   `metadata`: Its descriptive metadata.\n    -   `media`: A list of its associated media files (images, videos, etc.).\n    -   `license_parents` (optional): Any parent tokens it derives rights from.\n    -   `authorizations` (optional): Any pre-existing direct authorizations for this Token.\n3.  **If existing:** The Token's information is updated.\n    -   The system compares the `block_number` of the provided `registration_tx` with the existing one.\n    -   If the new `registration_tx` is more recent (higher block number), the Token's record (including media, metadata etc.) is updated with the new data.\n    -   If the existing `registration_tx` is more recent or the same, the existing core data is preserved\n4.  **Infringement Check:** After registration or update, an IP infringement check is initiated for the Token's media. The results can be retrieved by subsequent calls to the Token `GET` endpoint.\n\n**Key Request Body Fields:**\n-   `id` (string, required): Token identifier (e.g., `contract_address:token_id`).\n-   `registration_tx` (object, required): Transaction details.\n-   `creator_id` (string, required): Creator's identifier.\n-   `metadata` (object, required): Token metadata.\n-   `media` (array of objects, required): Media items associated with the Token. Each must have `media_id` and `url`. If the media is coming from a non-proveable location, it must include a hash to ensure the content that Yakoa fetches and processes matches that expected by the platform. If the content fetched by Yakoa does not match the expected hash, the media will get a `hash_mismatch` status and no infringement checks will be run. If the media comes from a proveable location (e.g., IPFS), the hash is not required.\nMedia can optionally include a `trust_reason`.\n-   `license_parents` (array, optional): Parent license information.\n-   `authorizations` (array, optional): Direct brand authorizations for this token.\n\n**Use Cases:**\n-   Registering a newly minted NFT on a marketplace.\n-   Updating a Token's metadata or media if it changes on-chain or in its source.\n-   Adding new brand authorizations directly to a Token.\n\n**Important Notes:**\n-   Media URLs must be publicly accessible.\n-   If an existing token is updated with a registration_tx that is older than the stored one, the response will be a 200 OK with the existing token data, rather than a 201 Created.\n",
+        "operationId": "TokenTokenPost",
+        "parameters": [
+          {
+            "name": "other_data",
+            "in": "query",
+            "schema": {
+              "oneOf": [
+                {
+                  "properties": {
+                    "brand_id": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "brand_name": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "email",
+                              "default": "email"
+                            },
+                            "email_address": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "email_address"
+                          ],
+                          "title": "EmailAuthorization"
+                        },
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "false_positive",
+                              "default": "false_positive"
+                            }
+                          },
+                          "type": "object",
+                          "required": [],
+                          "title": "FalsePositive"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "title": "AuthorizationPostData",
+                  "example": {
+                    "brand_name": "My Brand",
+                    "data": {
+                      "type": "email",
+                      "email_address": "{user.email}"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false,
+            "deprecated": false,
+            "allowEmptyValue": false,
+            "allowReserved": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+                    "examples": [
+                      "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+                    ]
+                  },
+                  "registration_tx": {
+                    "properties": {
+                      "hash": {
+                        "type": "string",
+                        "maxLength": 32,
+                        "minLength": 32,
+                        "contentEncoding": "utf-8"
+                      },
+                      "block_number": {
+                        "type": "integer"
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "default": 0
+                      }
+                    },
+                    "type": "object",
+                    "required": [
+                      "block_number",
+                      "hash"
+                    ],
+                    "title": "TransactionPostData"
+                  },
+                  "creator_id": {
+                    "type": "string",
+                    "pattern": "^0x[a-f0-9]{40}$",
+                    "examples": [
+                      "0x2b3ab8e7bb14988616359b78709538b10900ab7d"
+                    ]
+                  },
+                  "metadata": {
+                    "type": "object"
+                  },
+                  "media": {
+                    "items": {
+                      "properties": {
+                        "media_id": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "format": "url"
+                            },
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "string",
+                              "format": "url"
+                            }
+                          ]
+                        },
+                        "hash": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "examples": [
+                            "a3f5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7g8h9i0j1k2l3m4n5"
+                          ]
+                        },
+                        "trust_reason": {
+                          "oneOf": [
+                            {
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "const": "trusted_platform",
+                                  "default": "trusted_platform"
+                                },
+                                "platform_name": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object",
+                              "required": [
+                                "platform_name"
+                              ],
+                              "title": "TrustedPlatformTrustReason"
+                            },
+                            {
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "const": "no_licenses",
+                                  "default": "no_licenses"
+                                }
+                              },
+                              "type": "object",
+                              "required": [],
+                              "title": "NoLicensesTrustReason"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "examples": [
+                            {
+                              "type": "trusted_plaform",
+                              "platform_name": "Magma"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "media_id",
+                        "url"
+                      ],
+                      "title": "MediaPostRequest"
+                    },
+                    "type": "array"
+                  },
+                  "license_parents": {
+                    "oneOf": [
+                      {
+                        "items": {
+                          "properties": {
+                            "parent_id": {
+                              "type": "string",
+                              "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+                              "examples": [
+                                "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+                              ]
+                            },
+                            "license_id": {
+                              "type": "string",
+                              "pattern": "^0x[a-f0-9]{40}$",
+                              "examples": [
+                                "0x2b3ab8e7bb14988616359b78709538b10900ab7d"
+                              ]
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "license_id",
+                            "parent_id"
+                          ],
+                          "title": "LicensePostData"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "authorizations": {
+                    "oneOf": [
+                      {
+                        "items": {
+                          "properties": {
+                            "brand_id": {
+                              "oneOf": [
+                                {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "brand_name": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "data": {
+                              "oneOf": [
+                                {
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "email",
+                                      "default": "email"
+                                    },
+                                    "email_address": {
+                                      "type": "string",
+                                      "format": "email"
+                                    }
+                                  },
+                                  "type": "object",
+                                  "required": [
+                                    "email_address"
+                                  ],
+                                  "title": "EmailAuthorization"
+                                },
+                                {
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "const": "false_positive",
+                                      "default": "false_positive"
+                                    }
+                                  },
+                                  "type": "object",
+                                  "required": [],
+                                  "title": "FalsePositive"
+                                }
+                              ]
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "data"
+                          ],
+                          "title": "AuthorizationPostData",
+                          "example": {
+                            "brand_name": "My Brand",
+                            "data": {
+                              "type": "email",
+                              "email_address": "{user.email}"
+                            }
+                          }
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "creator_id",
+                  "id",
+                  "media",
+                  "metadata",
+                  "registration_tx"
+                ],
+                "title": "TokenPostData",
+                "example": {
+                  "id": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
+                  "registration_tx": {
+                    "hash": "0x2473a96855e8625c5c4b643962a3905e029aaf9a55aefc882ad90bf623931570",
+                    "block_number": 13435572,
+                    "timestamp": "2021-10-17T01:00:19Z"
+                  },
+                  "creator_id": "0x2b3ab8e7bb14988616359b78709538b10900ab7d",
+                  "metadata": {
+                    "name": "Doodle #42"
+                  },
+                  "media": [
+                    {
+                      "media_id": "ipfs_image",
+                      "url": "https://ipfs.io/ipfs/QmQTkvAKhrTCmSR24zQgDLUiUT6gqWqh9aZJDbX5yWgLMP",
+                      "hash": "2bfeb6d726ea350b7e8984e7f4ee86cedfc90cf58ac60f2579968ad852e62825",
+                      "trust_reason": null
+                    },
+                    {
+                      "media_id": "trusted_image",
+                      "url": "https://www.nike.com/favicon.ico",
+                      "hash": "c0ccf2af3b5a4b3c81727a5cc79a0d8d99529e70c9dabb9824bf9b7bf8daf96a",
+                      "trust_reason": {
+                        "type": "trusted_platform",
+                        "platform_name": "Magma"
+                      }
+                    }
+                  ],
+                  "license_parents": null,
+                  "authorizations": null
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Document created, URL follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "properties": {
+                        "chain": {
+                          "type": "string"
+                        },
+                        "contract_address": {
+                          "type": "string"
+                        },
+                        "token_id": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "chain",
+                        "contract_address"
+                      ],
+                      "title": "TokenID"
+                    },
+                    "registration_tx": {
+                      "properties": {
+                        "hash": {
+                          "type": "string",
+                          "maxLength": 32,
+                          "minLength": 32,
+                          "contentEncoding": "utf-8"
+                        },
+                        "block_number": {
+                          "type": "integer"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "chain": {
+                          "type": "string",
+                          "enum": [
+                            "story-mainnet",
+                            "story-aeneid",
+                            "story-illiad",
+                            "story-odyssey"
+                          ],
+                          "title": "Chain"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "block_number",
+                        "chain",
+                        "hash",
+                        "timestamp"
+                      ],
+                      "title": "Transaction"
+                    },
+                    "creator_id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "metadata": {
+                      "type": "object"
+                    },
+                    "license_parents": {
+                      "items": {
+                        "properties": {
+                          "parent_token_id": {
+                            "properties": {
+                              "chain": {
+                                "type": "string"
+                              },
+                              "contract_address": {
+                                "type": "string"
+                              },
+                              "token_id": {
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "type": "object",
+                            "required": [
+                              "chain",
+                              "contract_address"
+                            ],
+                            "title": "TokenID"
+                          },
+                          "license_id": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "license_id",
+                          "parent_token_id"
+                        ],
+                        "title": "ParentToken"
+                      },
+                      "type": "array",
+                      "default": []
+                    },
+                    "token_authorizations": {
+                      "items": {
+                        "properties": {
+                          "brand_id": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "brand_name": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "data": {
+                            "oneOf": [
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "email",
+                                    "default": "email"
+                                  },
+                                  "email_address": {
+                                    "type": "string",
+                                    "format": "email"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "email_address"
+                                ],
+                                "title": "EmailAuthorization"
+                              },
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "false_positive",
+                                    "default": "false_positive"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [],
+                                "title": "FalsePositive"
+                              }
+                            ]
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "data"
+                        ],
+                        "title": "Authorization"
+                      },
+                      "type": "array",
+                      "default": []
+                    },
+                    "creator_authorizations": {
+                      "items": {
+                        "properties": {
+                          "brand_id": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "brand_name": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "data": {
+                            "oneOf": [
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "email",
+                                    "default": "email"
+                                  },
+                                  "email_address": {
+                                    "type": "string",
+                                    "format": "email"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "email_address"
+                                ],
+                                "title": "EmailAuthorization"
+                              },
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "false_positive",
+                                    "default": "false_positive"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [],
+                                "title": "FalsePositive"
+                              }
+                            ]
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "data"
+                        ],
+                        "title": "Authorization"
+                      },
+                      "type": "array",
+                      "default": []
+                    },
+                    "media": {
+                      "items": {
+                        "properties": {
+                          "media_id": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "url"
+                              },
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "string",
+                                "format": "url"
+                              }
+                            ]
+                          },
+                          "hash": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "trust_reason": {
+                            "oneOf": [
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "trusted_platform",
+                                    "default": "trusted_platform"
+                                  },
+                                  "platform_name": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "platform_name"
+                                ],
+                                "title": "TrustedPlatformTrustReason"
+                              },
+                              {
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "no_licenses",
+                                    "default": "no_licenses"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [],
+                                "title": "NoLicensesTrustReason"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "fetch_status": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "failed",
+                                  "pending",
+                                  "succeeded",
+                                  "hash_mismatch",
+                                  "trusted"
+                                ],
+                                "title": "FetchStatus"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "uri_id": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "media_id",
+                          "url"
+                        ],
+                        "title": "Media"
+                      },
+                      "type": "array"
+                    },
+                    "infringements": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "const": "pending",
+                              "default": "pending"
+                            },
+                            "reasons": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "reasons"
+                          ],
+                          "title": "PendingTokenInfringements"
+                        },
+                        {
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "const": "failed",
+                              "default": "failed"
+                            },
+                            "reasons": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "reasons"
+                          ],
+                          "title": "FailedTokenInfringements"
+                        },
+                        {
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "const": "succeeded",
+                              "default": "succeeded"
+                            },
+                            "result": {
+                              "type": "string",
+                              "enum": [
+                                "infringement",
+                                "authorized",
+                                "no_infringement",
+                                "not_checked"
+                              ],
+                              "title": "TokenInfringementsResult"
+                            },
+                            "in_network_infringements": {
+                              "items": {
+                                "properties": {
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "media": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "token": {
+                                    "properties": {
+                                      "chain": {
+                                        "type": "string"
+                                      },
+                                      "contract_address": {
+                                        "type": "string"
+                                      },
+                                      "token_id": {
+                                        "oneOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type": "object",
+                                    "required": [
+                                      "chain",
+                                      "contract_address"
+                                    ],
+                                    "title": "TokenID"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "media",
+                                  "status",
+                                  "token"
+                                ],
+                                "title": "InNetworkInfringements"
+                              },
+                              "type": "array"
+                            },
+                            "external_infringements": {
+                              "items": {
+                                "properties": {
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "media": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "brand": {
+                                    "type": "string"
+                                  },
+                                  "brand_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "brand",
+                                  "brand_id",
+                                  "media",
+                                  "status"
+                                ],
+                                "title": "ExternalInfringements"
+                              },
+                              "type": "array"
+                            },
+                            "credits": {
+                              "type": "object"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "credits",
+                            "external_infringements",
+                            "in_network_infringements",
+                            "result"
+                          ],
+                          "title": "SucceededTokenInfringements"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "media",
+                    "metadata",
+                    "registration_tx"
+                  ],
+                  "title": "Token"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/token/{token_id}/authorization/{brand_id}": {
+      "get": {
+        "tags": [
+          "Token Authorization"
+        ],
+        "summary": "Get Token Brand Authorization",
+        "description": "### Retrieves details of a specific Brand Authorization for a Token.\n\nThis endpoint fetches the authorization record that permits a specific Token to use content associated with a particular Brand.\n\n**Use Cases:**\n-   Verifying if a specific Token is authorized by a Brand before taking action (e.g., during an infringement review).\n-   Displaying authorization details in a user interface.\n-   Auditing permissions granted to a Token.\n\n**Path Parameters:**\n-   `token_id` (string, required, from parent router): The unique identifier of the Token.\n-   `network` (string, required, from parent router): The blockchain network.\n-   `brand_id` (string, required): The unique identifier of the Brand for which authorization details are being requested for this Token.\n\n",
+        "operationId": "TokenTokenIdAuthorizationBrandIdAuthorizationGet",
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+              "examples": [
+                "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              ]
+            },
+            "required": true,
+            "deprecated": false,
+            "examples": {
+              "token_id-example-1": {
+                "summary": "Doodle",
+                "value": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              }
+            }
+          },
+          {
+            "name": "brand_id",
+            "in": "path",
+            "schema": {
+              "properties": {
+                "root": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "type": "object",
+              "required": [
+                "root"
+              ],
+              "title": "RootModel[Annotated[UUID, PlainSerializer, PlainValidator]]"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "brand_id": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "brand_name": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "email",
+                              "default": "email"
+                            },
+                            "email_address": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "email_address"
+                          ],
+                          "title": "EmailAuthorization"
+                        },
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "false_positive",
+                              "default": "false_positive"
+                            }
+                          },
+                          "type": "object",
+                          "required": [],
+                          "title": "FalsePositive"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "title": "Authorization"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      },
+      "delete": {
+        "tags": [
+          "Token Authorization"
+        ],
+        "summary": "Delete Token Brand Authorization",
+        "description": "### Deletes an existing Brand Authorization for a specific Token.\n\nThis action revokes a previously granted permission for a Token to use content associated with a specific Brand.\n\n**Use Cases:**\n-   A Brand revokes permission for a specific Token due to a change in licensing terms.\n-   An erroneous authorization needs to be removed.\n\n**Path Parameters:**\n-   `token_id` (string, required, from parent router): The unique identifier of the Token.\n-   `network` (string, required, from parent router): The blockchain network.\n-   `brand_id` (string, required): The unique identifier of the Brand whose authorization is being deleted for this Token.\n\n**Responses:**\n-   `204 No Content`: Successfully deleted the authorization (or it didn't exist).\n",
+        "operationId": "TokenTokenIdAuthorizationBrandIdAuthorizationDelete",
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+              "examples": [
+                "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              ]
+            },
+            "required": true,
+            "deprecated": false,
+            "examples": {
+              "token_id-example-1": {
+                "summary": "Doodle",
+                "value": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              }
+            }
+          },
+          {
+            "name": "brand_id",
+            "in": "path",
+            "schema": {
+              "properties": {
+                "root": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "type": "object",
+              "required": [
+                "root"
+              ],
+              "title": "RootModel[Annotated[UUID, PlainSerializer, PlainValidator]]"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request fulfilled, nothing follows",
+            "headers": {}
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/token/{token_id}/authorization": {
+      "post": {
+        "tags": [
+          "Token Authorization"
+        ],
+        "summary": "Create or Update Token Brand Authorization",
+        "description": "### Creates or updates a Brand Authorization for a specific Token.\n\n{user.email}\n\nThis endpoint establishes or modifies a record indicating that a specific Token has explicit permission from a Brand to use its intellectual property.\nIf an authorization for this Token and Brand already exists, its `data` field is updated. Otherwise, a new authorization record is created.\n\n**Use Cases:**\n-   A Brand explicitly approves a specific Token (e.g., a piece of user-generated content using their IP).\n-   Marking a Token as a \"false positive\" after an infringement check, thereby authorizing it.\n-   Updating the details or evidence of an existing authorization for a Token.\n\n**Path Parameters:**\n-   `token_id` (string, required, from parent router): The unique identifier of the Token receiving the authorization.\n-   `network` (string, required, from parent router): The blockchain network.\n\n**Request Body:**\n-   `brand_id` (string, optional): The unique identifier of the Brand granting the authorization.\n-   `brand_name` (string, optional): The name of the Brand. (Either `brand_id` or `brand_name` must be provided).\n-   `data` (object, required): An object containing details about the authorization. The structure of this object can vary. Common fields include:\n    -   `type` (string): The type of authorization (e.g., \"email\", \"false_positive\").\n    -   Other fields relevant to the `type` (e.g., `email_address` for \"email\", `reason` for \"false_positive\").\n\n",
+        "operationId": "TokenTokenIdAuthorizationAuthorizationPost",
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+              "examples": [
+                "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              ]
+            },
+            "required": true,
+            "deprecated": false,
+            "examples": {
+              "token_id-example-1": {
+                "summary": "Doodle",
+                "value": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "brand_id": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "brand_name": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "data": {
+                    "oneOf": [
+                      {
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "email",
+                            "default": "email"
+                          },
+                          "email_address": {
+                            "type": "string",
+                            "format": "email"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "email_address"
+                        ],
+                        "title": "EmailAuthorization"
+                      },
+                      {
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "false_positive",
+                            "default": "false_positive"
+                          }
+                        },
+                        "type": "object",
+                        "required": [],
+                        "title": "FalsePositive"
+                      }
+                    ]
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "data"
+                ],
+                "title": "AuthorizationPostData",
+                "example": {
+                  "brand_name": "My Brand",
+                  "data": {
+                    "type": "email",
+                    "email_address": "{user.email}"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Document created, URL follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/token/{token_id}/media/{media_id}": {
+      "get": {
+        "tags": [
+          "Token Media"
+        ],
+        "summary": "Get Token Media",
+        "description": "Retrieves a specific media item associated with a token.\n\nThe media item is identified by its `media_id` and belongs to the token specified by `token_id` in the path.\nThis endpoint returns the details of the media, including its URL, hash (if available), and trust reason.",
+        "operationId": "TokenTokenIdMediaMediaIdMediaGet",
+        "parameters": [
+          {
+            "name": "media_id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "deprecated": false
+          },
+          {
+            "name": "token_id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+              "examples": [
+                "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              ]
+            },
+            "required": true,
+            "deprecated": false,
+            "examples": {
+              "token_id-example-1": {
+                "summary": "Doodle",
+                "value": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "media_id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "format": "url"
+                        },
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "string",
+                          "format": "url"
+                        }
+                      ]
+                    },
+                    "hash": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "trust_reason": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "trusted_platform",
+                              "default": "trusted_platform"
+                            },
+                            "platform_name": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "platform_name"
+                          ],
+                          "title": "TrustedPlatformTrustReason"
+                        },
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "no_licenses",
+                              "default": "no_licenses"
+                            }
+                          },
+                          "type": "object",
+                          "required": [],
+                          "title": "NoLicensesTrustReason"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "fetch_status": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "failed",
+                            "pending",
+                            "succeeded",
+                            "hash_mismatch",
+                            "trusted"
+                          ],
+                          "title": "FetchStatus"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "uri_id": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "media_id",
+                    "url"
+                  ],
+                  "title": "Media"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      },
+      "patch": {
+        "tags": [
+          "Token Media"
+        ],
+        "summary": "Update Token Media",
+        "description": "Updates attributes of a specific media item associated with a token.\n\nAllows for partial updates to a media item's properties, such as its `trust_reason`.\nThe media item is identified by its `media_id` and belongs to the token specified by `token_id` in the path.\nThe request body should contain the fields to be updated.",
+        "operationId": "TokenTokenIdMediaMediaIdMediaPatch",
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+              "examples": [
+                "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              ]
+            },
+            "required": true,
+            "deprecated": false,
+            "examples": {
+              "token_id-example-1": {
+                "summary": "Doodle",
+                "value": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+              }
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "deprecated": false
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "trust_reason": {
+                    "oneOf": [
+                      {
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "trusted_platform",
+                            "default": "trusted_platform"
+                          },
+                          "platform_name": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "platform_name"
+                        ],
+                        "title": "TrustedPlatformTrustReason"
+                      },
+                      {
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "no_licenses",
+                            "default": "no_licenses"
+                          }
+                        },
+                        "type": "object",
+                        "required": [],
+                        "title": "NoLicensesTrustReason"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      {
+                        "type": "trusted_platform",
+                        "platform_name": "Magma"
+                      }
+                    ]
+                  }
+                },
+                "type": "object",
+                "required": [],
+                "title": "MediaPatchData",
+                "examples": [
+                  {
+                    "trust_reason": {
+                      "type": "trusted_platform",
+                      "platform_name": "Magma"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request fulfilled, document follows",
+            "headers": {},
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "media_id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "format": "url"
+                        },
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "string",
+                          "format": "url"
+                        }
+                      ]
+                    },
+                    "hash": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "trust_reason": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "trusted_platform",
+                              "default": "trusted_platform"
+                            },
+                            "platform_name": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "platform_name"
+                          ],
+                          "title": "TrustedPlatformTrustReason"
+                        },
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "no_licenses",
+                              "default": "no_licenses"
+                            }
+                          },
+                          "type": "object",
+                          "required": [],
+                          "title": "NoLicensesTrustReason"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "fetch_status": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "failed",
+                            "pending",
+                            "succeeded",
+                            "hash_mismatch",
+                            "trusted"
+                          ],
+                          "title": "FetchStatus"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "uri_id": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "media_id",
+                    "url"
+                  ],
+                  "title": "Media"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request syntax or unsupported method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status_code": {
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "extra": {
+                      "additionalProperties": {},
+                      "type": [
+                        "null",
+                        "object",
+                        "array"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "detail",
+                    "status_code"
+                  ],
+                  "description": "Validation Exception",
+                  "examples": [
+                    {
+                      "status_code": 400,
+                      "detail": "Bad Request",
+                      "extra": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Authorization": {
+        "properties": {
+          "brand_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "brand_name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "oneOf": [
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "email",
+                    "default": "email"
+                  },
+                  "email_address": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "email_address"
+                ],
+                "title": "EmailAuthorization"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "false_positive",
+                    "default": "false_positive"
+                  }
+                },
+                "type": "object",
+                "required": [],
+                "title": "FalsePositive"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "Authorization"
+      },
+      "AuthorizationPostData": {
+        "properties": {
+          "brand_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "brand_name": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "oneOf": [
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "email",
+                    "default": "email"
+                  },
+                  "email_address": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "email_address"
+                ],
+                "title": "EmailAuthorization"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "false_positive",
+                    "default": "false_positive"
+                  }
+                },
+                "type": "object",
+                "required": [],
+                "title": "FalsePositive"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "AuthorizationPostData",
+        "example": {
+          "brand_name": "My Brand",
+          "data": {
+            "type": "email",
+            "email_address": "{user.email}"
+          }
+        }
+      },
+      "Chain": {
+        "type": "string",
+        "enum": [
+          "story-mainnet",
+          "story-aeneid",
+          "story-illiad",
+          "story-odyssey"
+        ],
+        "title": "Chain"
+      },
+      "EmailAuthorization": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "email",
+            "default": "email"
+          },
+          "email_address": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email_address"
+        ],
+        "title": "EmailAuthorization"
+      },
+      "ExternalInfringements": {
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "media": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "brand_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brand",
+          "brand_id",
+          "media",
+          "status"
+        ],
+        "title": "ExternalInfringements"
+      },
+      "FailedTokenInfringements": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "failed",
+            "default": "failed"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reasons"
+        ],
+        "title": "FailedTokenInfringements"
+      },
+      "FalsePositive": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "false_positive",
+            "default": "false_positive"
+          }
+        },
+        "type": "object",
+        "required": [],
+        "title": "FalsePositive"
+      },
+      "FetchStatus": {
+        "type": "string",
+        "enum": [
+          "failed",
+          "pending",
+          "succeeded",
+          "hash_mismatch",
+          "trusted"
+        ],
+        "title": "FetchStatus"
+      },
+      "InNetworkInfringements": {
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "media": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "token": {
+            "properties": {
+              "chain": {
+                "type": "string"
+              },
+              "contract_address": {
+                "type": "string"
+              },
+              "token_id": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "type": "object",
+            "required": [
+              "chain",
+              "contract_address"
+            ],
+            "title": "TokenID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media",
+          "status",
+          "token"
+        ],
+        "title": "InNetworkInfringements"
+      },
+      "LicensePostData": {
+        "properties": {
+          "parent_id": {
+            "type": "string",
+            "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+            "examples": [
+              "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+            ]
+          },
+          "license_id": {
+            "type": "string",
+            "pattern": "^0x[a-f0-9]{40}$",
+            "examples": [
+              "0x2b3ab8e7bb14988616359b78709538b10900ab7d"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "license_id",
+          "parent_id"
+        ],
+        "title": "LicensePostData"
+      },
+      "Media": {
+        "properties": {
+          "media_id": {
+            "type": "string"
+          },
+          "url": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "url"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "format": "url"
+              }
+            ]
+          },
+          "hash": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trust_reason": {
+            "oneOf": [
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "trusted_platform",
+                    "default": "trusted_platform"
+                  },
+                  "platform_name": {
+                    "type": "string"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "platform_name"
+                ],
+                "title": "TrustedPlatformTrustReason"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "no_licenses",
+                    "default": "no_licenses"
+                  }
+                },
+                "type": "object",
+                "required": [],
+                "title": "NoLicensesTrustReason"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fetch_status": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "failed",
+                  "pending",
+                  "succeeded",
+                  "hash_mismatch",
+                  "trusted"
+                ],
+                "title": "FetchStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "uri_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "url"
+        ],
+        "title": "Media"
+      },
+      "MediaPatchData": {
+        "properties": {
+          "trust_reason": {
+            "oneOf": [
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "trusted_platform",
+                    "default": "trusted_platform"
+                  },
+                  "platform_name": {
+                    "type": "string"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "platform_name"
+                ],
+                "title": "TrustedPlatformTrustReason"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "no_licenses",
+                    "default": "no_licenses"
+                  }
+                },
+                "type": "object",
+                "required": [],
+                "title": "NoLicensesTrustReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              {
+                "type": "trusted_platform",
+                "platform_name": "Magma"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [],
+        "title": "MediaPatchData",
+        "examples": [
+          {
+            "trust_reason": {
+              "type": "trusted_platform",
+              "platform_name": "Magma"
+            }
+          }
+        ]
+      },
+      "MediaPostRequest": {
+        "properties": {
+          "media_id": {
+            "type": "string"
+          },
+          "url": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "url"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "format": "url"
+              }
+            ]
+          },
+          "hash": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "a3f5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7g8h9i0j1k2l3m4n5"
+            ]
+          },
+          "trust_reason": {
+            "oneOf": [
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "trusted_platform",
+                    "default": "trusted_platform"
+                  },
+                  "platform_name": {
+                    "type": "string"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "platform_name"
+                ],
+                "title": "TrustedPlatformTrustReason"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "no_licenses",
+                    "default": "no_licenses"
+                  }
+                },
+                "type": "object",
+                "required": [],
+                "title": "NoLicensesTrustReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              {
+                "type": "trusted_plaform",
+                "platform_name": "Magma"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "url"
+        ],
+        "title": "MediaPostRequest"
+      },
+      "NoLicensesTrustReason": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "no_licenses",
+            "default": "no_licenses"
+          }
+        },
+        "type": "object",
+        "required": [],
+        "title": "NoLicensesTrustReason"
+      },
+      "ParentToken": {
+        "properties": {
+          "parent_token_id": {
+            "properties": {
+              "chain": {
+                "type": "string"
+              },
+              "contract_address": {
+                "type": "string"
+              },
+              "token_id": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "type": "object",
+            "required": [
+              "chain",
+              "contract_address"
+            ],
+            "title": "TokenID"
+          },
+          "license_id": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "license_id",
+          "parent_token_id"
+        ],
+        "title": "ParentToken"
+      },
+      "PendingTokenInfringements": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "pending",
+            "default": "pending"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reasons"
+        ],
+        "title": "PendingTokenInfringements"
+      },
+      "RootModel_Annotated_UUID_PlainSerializer_PlainValidator_": {
+        "properties": {
+          "root": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "root"
+        ],
+        "title": "RootModel[Annotated[UUID, PlainSerializer, PlainValidator]]"
+      },
+      "SucceededTokenInfringements": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "succeeded",
+            "default": "succeeded"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "infringement",
+              "authorized",
+              "no_infringement",
+              "not_checked"
+            ],
+            "title": "TokenInfringementsResult"
+          },
+          "in_network_infringements": {
+            "items": {
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "media": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "token": {
+                  "properties": {
+                    "chain": {
+                      "type": "string"
+                    },
+                    "contract_address": {
+                      "type": "string"
+                    },
+                    "token_id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "chain",
+                    "contract_address"
+                  ],
+                  "title": "TokenID"
+                }
+              },
+              "type": "object",
+              "required": [
+                "media",
+                "status",
+                "token"
+              ],
+              "title": "InNetworkInfringements"
+            },
+            "type": "array"
+          },
+          "external_infringements": {
+            "items": {
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "media": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "brand": {
+                  "type": "string"
+                },
+                "brand_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "type": "object",
+              "required": [
+                "brand",
+                "brand_id",
+                "media",
+                "status"
+              ],
+              "title": "ExternalInfringements"
+            },
+            "type": "array"
+          },
+          "credits": {
+            "type": "object"
+          }
+        },
+        "type": "object",
+        "required": [
+          "credits",
+          "external_infringements",
+          "in_network_infringements",
+          "result"
+        ],
+        "title": "SucceededTokenInfringements"
+      },
+      "Token": {
+        "properties": {
+          "id": {
+            "properties": {
+              "chain": {
+                "type": "string"
+              },
+              "contract_address": {
+                "type": "string"
+              },
+              "token_id": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "type": "object",
+            "required": [
+              "chain",
+              "contract_address"
+            ],
+            "title": "TokenID"
+          },
+          "registration_tx": {
+            "properties": {
+              "hash": {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 32,
+                "contentEncoding": "utf-8"
+              },
+              "block_number": {
+                "type": "integer"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "chain": {
+                "type": "string",
+                "enum": [
+                  "story-mainnet",
+                  "story-aeneid",
+                  "story-illiad",
+                  "story-odyssey"
+                ],
+                "title": "Chain"
+              }
+            },
+            "type": "object",
+            "required": [
+              "block_number",
+              "chain",
+              "hash",
+              "timestamp"
+            ],
+            "title": "Transaction"
+          },
+          "creator_id": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "license_parents": {
+            "items": {
+              "properties": {
+                "parent_token_id": {
+                  "properties": {
+                    "chain": {
+                      "type": "string"
+                    },
+                    "contract_address": {
+                      "type": "string"
+                    },
+                    "token_id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "chain",
+                    "contract_address"
+                  ],
+                  "title": "TokenID"
+                },
+                "license_id": {
+                  "type": "string"
+                }
+              },
+              "type": "object",
+              "required": [
+                "license_id",
+                "parent_token_id"
+              ],
+              "title": "ParentToken"
+            },
+            "type": "array",
+            "default": []
+          },
+          "token_authorizations": {
+            "items": {
+              "properties": {
+                "brand_id": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "brand_name": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "data": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "email",
+                          "default": "email"
+                        },
+                        "email_address": {
+                          "type": "string",
+                          "format": "email"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "email_address"
+                      ],
+                      "title": "EmailAuthorization"
+                    },
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "false_positive",
+                          "default": "false_positive"
+                        }
+                      },
+                      "type": "object",
+                      "required": [],
+                      "title": "FalsePositive"
+                    }
+                  ]
+                }
+              },
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "title": "Authorization"
+            },
+            "type": "array",
+            "default": []
+          },
+          "creator_authorizations": {
+            "items": {
+              "properties": {
+                "brand_id": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "brand_name": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "data": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "email",
+                          "default": "email"
+                        },
+                        "email_address": {
+                          "type": "string",
+                          "format": "email"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "email_address"
+                      ],
+                      "title": "EmailAuthorization"
+                    },
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "false_positive",
+                          "default": "false_positive"
+                        }
+                      },
+                      "type": "object",
+                      "required": [],
+                      "title": "FalsePositive"
+                    }
+                  ]
+                }
+              },
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "title": "Authorization"
+            },
+            "type": "array",
+            "default": []
+          },
+          "media": {
+            "items": {
+              "properties": {
+                "media_id": {
+                  "type": "string"
+                },
+                "url": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "format": "url"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "string",
+                      "format": "url"
+                    }
+                  ]
+                },
+                "hash": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "trust_reason": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "trusted_platform",
+                          "default": "trusted_platform"
+                        },
+                        "platform_name": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "platform_name"
+                      ],
+                      "title": "TrustedPlatformTrustReason"
+                    },
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "no_licenses",
+                          "default": "no_licenses"
+                        }
+                      },
+                      "type": "object",
+                      "required": [],
+                      "title": "NoLicensesTrustReason"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fetch_status": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "failed",
+                        "pending",
+                        "succeeded",
+                        "hash_mismatch",
+                        "trusted"
+                      ],
+                      "title": "FetchStatus"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "uri_id": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "type": "object",
+              "required": [
+                "media_id",
+                "url"
+              ],
+              "title": "Media"
+            },
+            "type": "array"
+          },
+          "infringements": {
+            "oneOf": [
+              {
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "pending",
+                    "default": "pending"
+                  },
+                  "reasons": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "reasons"
+                ],
+                "title": "PendingTokenInfringements"
+              },
+              {
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "failed",
+                    "default": "failed"
+                  },
+                  "reasons": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "reasons"
+                ],
+                "title": "FailedTokenInfringements"
+              },
+              {
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "const": "succeeded",
+                    "default": "succeeded"
+                  },
+                  "result": {
+                    "type": "string",
+                    "enum": [
+                      "infringement",
+                      "authorized",
+                      "no_infringement",
+                      "not_checked"
+                    ],
+                    "title": "TokenInfringementsResult"
+                  },
+                  "in_network_infringements": {
+                    "items": {
+                      "properties": {
+                        "status": {
+                          "type": "string"
+                        },
+                        "media": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "token": {
+                          "properties": {
+                            "chain": {
+                              "type": "string"
+                            },
+                            "contract_address": {
+                              "type": "string"
+                            },
+                            "token_id": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "chain",
+                            "contract_address"
+                          ],
+                          "title": "TokenID"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "media",
+                        "status",
+                        "token"
+                      ],
+                      "title": "InNetworkInfringements"
+                    },
+                    "type": "array"
+                  },
+                  "external_infringements": {
+                    "items": {
+                      "properties": {
+                        "status": {
+                          "type": "string"
+                        },
+                        "media": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "brand": {
+                          "type": "string"
+                        },
+                        "brand_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "brand",
+                        "brand_id",
+                        "media",
+                        "status"
+                      ],
+                      "title": "ExternalInfringements"
+                    },
+                    "type": "array"
+                  },
+                  "credits": {
+                    "type": "object"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "credits",
+                  "external_infringements",
+                  "in_network_infringements",
+                  "result"
+                ],
+                "title": "SucceededTokenInfringements"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "media",
+          "metadata",
+          "registration_tx"
+        ],
+        "title": "Token"
+      },
+      "TokenID": {
+        "properties": {
+          "chain": {
+            "type": "string"
+          },
+          "contract_address": {
+            "type": "string"
+          },
+          "token_id": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "chain",
+          "contract_address"
+        ],
+        "title": "TokenID"
+      },
+      "TokenInfringementsResult": {
+        "type": "string",
+        "enum": [
+          "infringement",
+          "authorized",
+          "no_infringement",
+          "not_checked"
+        ],
+        "title": "TokenInfringementsResult"
+      },
+      "TokenPostData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+            "examples": [
+              "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+            ]
+          },
+          "registration_tx": {
+            "properties": {
+              "hash": {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 32,
+                "contentEncoding": "utf-8"
+              },
+              "block_number": {
+                "type": "integer"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "default": 0
+              }
+            },
+            "type": "object",
+            "required": [
+              "block_number",
+              "hash"
+            ],
+            "title": "TransactionPostData"
+          },
+          "creator_id": {
+            "type": "string",
+            "pattern": "^0x[a-f0-9]{40}$",
+            "examples": [
+              "0x2b3ab8e7bb14988616359b78709538b10900ab7d"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "media": {
+            "items": {
+              "properties": {
+                "media_id": {
+                  "type": "string"
+                },
+                "url": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "format": "url"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "string",
+                      "format": "url"
+                    }
+                  ]
+                },
+                "hash": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "examples": [
+                    "a3f5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7g8h9i0j1k2l3m4n5"
+                  ]
+                },
+                "trust_reason": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "trusted_platform",
+                          "default": "trusted_platform"
+                        },
+                        "platform_name": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "platform_name"
+                      ],
+                      "title": "TrustedPlatformTrustReason"
+                    },
+                    {
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "no_licenses",
+                          "default": "no_licenses"
+                        }
+                      },
+                      "type": "object",
+                      "required": [],
+                      "title": "NoLicensesTrustReason"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "examples": [
+                    {
+                      "type": "trusted_plaform",
+                      "platform_name": "Magma"
+                    }
+                  ]
+                }
+              },
+              "type": "object",
+              "required": [
+                "media_id",
+                "url"
+              ],
+              "title": "MediaPostRequest"
+            },
+            "type": "array"
+          },
+          "license_parents": {
+            "oneOf": [
+              {
+                "items": {
+                  "properties": {
+                    "parent_id": {
+                      "type": "string",
+                      "pattern": "^0x[a-f0-9]{40}(:[0-9]+)?$",
+                      "examples": [
+                        "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e"
+                      ]
+                    },
+                    "license_id": {
+                      "type": "string",
+                      "pattern": "^0x[a-f0-9]{40}$",
+                      "examples": [
+                        "0x2b3ab8e7bb14988616359b78709538b10900ab7d"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "license_id",
+                    "parent_id"
+                  ],
+                  "title": "LicensePostData"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "authorizations": {
+            "oneOf": [
+              {
+                "items": {
+                  "properties": {
+                    "brand_id": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "brand_name": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "email",
+                              "default": "email"
+                            },
+                            "email_address": {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "email_address"
+                          ],
+                          "title": "EmailAuthorization"
+                        },
+                        {
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "false_positive",
+                              "default": "false_positive"
+                            }
+                          },
+                          "type": "object",
+                          "required": [],
+                          "title": "FalsePositive"
+                        }
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "title": "AuthorizationPostData",
+                  "example": {
+                    "brand_name": "My Brand",
+                    "data": {
+                      "type": "email",
+                      "email_address": "{user.email}"
+                    }
+                  }
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "creator_id",
+          "id",
+          "media",
+          "metadata",
+          "registration_tx"
+        ],
+        "title": "TokenPostData",
+        "example": {
+          "id": "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
+          "registration_tx": {
+            "hash": "0x2473a96855e8625c5c4b643962a3905e029aaf9a55aefc882ad90bf623931570",
+            "block_number": 13435572,
+            "timestamp": "2021-10-17T01:00:19Z"
+          },
+          "creator_id": "0x2b3ab8e7bb14988616359b78709538b10900ab7d",
+          "metadata": {
+            "name": "Doodle #42"
+          },
+          "media": [
+            {
+              "media_id": "ipfs_image",
+              "url": "https://ipfs.io/ipfs/QmQTkvAKhrTCmSR24zQgDLUiUT6gqWqh9aZJDbX5yWgLMP",
+              "hash": "2bfeb6d726ea350b7e8984e7f4ee86cedfc90cf58ac60f2579968ad852e62825",
+              "trust_reason": null
+            },
+            {
+              "media_id": "trusted_image",
+              "url": "https://www.nike.com/favicon.ico",
+              "hash": "c0ccf2af3b5a4b3c81727a5cc79a0d8d99529e70c9dabb9824bf9b7bf8daf96a",
+              "trust_reason": {
+                "type": "trusted_platform",
+                "platform_name": "Magma"
+              }
+            }
+          ],
+          "license_parents": null,
+          "authorizations": null
+        }
+      },
+      "Transaction": {
+        "properties": {
+          "hash": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 32,
+            "contentEncoding": "utf-8"
+          },
+          "block_number": {
+            "type": "integer"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "chain": {
+            "type": "string",
+            "enum": [
+              "story-mainnet",
+              "story-aeneid",
+              "story-illiad",
+              "story-odyssey"
+            ],
+            "title": "Chain"
+          }
+        },
+        "type": "object",
+        "required": [
+          "block_number",
+          "chain",
+          "hash",
+          "timestamp"
+        ],
+        "title": "Transaction"
+      },
+      "TransactionPostData": {
+        "properties": {
+          "hash": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 32,
+            "contentEncoding": "utf-8"
+          },
+          "block_number": {
+            "type": "integer"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "block_number",
+          "hash"
+        ],
+        "title": "TransactionPostData"
+      },
+      "TrustedPlatformTrustReason": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "trusted_platform",
+            "default": "trusted_platform"
+          },
+          "platform_name": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "platform_name"
+        ],
+        "title": "TrustedPlatformTrustReason"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyAuth": {
+        "type": "apiKey",
+        "description": "API key for authenticating requests",
+        "name": "X-API-KEY",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "APIKeyAuth": []
+    }
+  ]
+}
