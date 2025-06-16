@@ -20,15 +20,17 @@ export async function POST(request: NextRequest) {
     console.log("caption", caption);
     console.log("voiceUrl", voiceUrl);
     const inputProps = { caption: caption, voiceUrl: voiceUrl };
-    console.log("inputProps", path.resolve('remotion/index.tsx'), inputProps);
     let bundleLoc = null;
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+        console.log("Running in production");
         const tmpOut = path.join(os.tmpdir(), `${Date.now()}.mp4`);
+        console.log("os.tmpdir()", os.tmpdir());
+        console.log("tmpOut", tmpOut);
         await fsPromises.mkdir(tmpOut, { recursive: true });
         bundleLoc = await bundle({
-            entryPoint: path.resolve('remotion/index.tsx'),
-            outDir: tmpOut,
+            entryPoint: path.resolve('remotion/index.tsx')
         });
+        console.log("bundleLoc", bundleLoc);
         const comps = await getCompositions(bundleLoc, {
             inputProps: { caption: caption, voiceUrl: voiceUrl },
         });
