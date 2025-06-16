@@ -24,23 +24,17 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
         console.log("Running in production");
         const tmpOut = path.join(os.tmpdir(), `${Date.now()}.mp4`);
+        await fsPromises.mkdir(tmpOut, { recursive: true });
         console.log("os.tmpdir()", os.tmpdir());
         console.log("tmpOut", tmpOut);
-        await fsPromises.mkdir(tmpOut, { recursive: true });
-        bundleLoc = await bundle({
-            entryPoint: path.resolve('remotion/index.tsx')
-        });
-        console.log("bundleLoc", bundleLoc);
-        const comps = await getCompositions(bundleLoc, {
-            inputProps: { caption: caption, voiceUrl: voiceUrl },
-        });
+        const serveUrl = 'https://vocalip-4s7p-git-main-makimakivers-projects.vercel.app/api/video_upload';
         const comp = await selectComposition({
-            serveUrl: bundleLoc,
+            serveUrl: serveUrl,
             id: 'MyComp',
             inputProps: { caption: caption, voiceUrl: voiceUrl }
           });
         await renderMedia({
-            serveUrl:       bundleLoc,
+            serveUrl:       serveUrl,
             composition:    comp,
             codec:          'h264',
             outputLocation: tmpOut,
