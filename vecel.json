@@ -1,0 +1,10 @@
+{
+    "version": 2,
+    "functions": {
+      "src/app/api/video_upload/route.ts": {
+        "runtime": "vercel-nodejs@2.0.4",
+        "includeFiles": "remotion/**"
+      }
+    }
+  }
+  
