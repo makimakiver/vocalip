@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
           config.cache = false;
           return config;
         },
+        outDir: path.join(process.cwd(), '.tmp'),
       });
     const comps = await getCompositions(bundleLoc, {
         inputProps: { caption: caption, voiceUrl: voiceUrl },
