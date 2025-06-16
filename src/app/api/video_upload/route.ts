@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
             id: 'MyComp',
             inputProps: { caption: caption, voiceUrl: voiceUrl }
           });
+        console.log("comp", comp);
         await renderMedia({
             serveUrl:       serveUrl,
             composition:    comp,
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
             inputProps:     { caption, voiceUrl: voiceUrl },
             enforceAudioTrack: true
         });
+        console.log("tmpOut", tmpOut);
         const outPath = tmpOut;
         if (!fs.existsSync(outPath)) {
             console.error('File does not exist:', outPath);
