@@ -21,8 +21,11 @@ export async function POST(request: NextRequest) {
     const inputProps = { caption: caption, voiceUrl: voiceUrl };
     console.log("inputProps", path.resolve('remotion/index.tsx'), inputProps);
     const bundleLoc = await bundle({
-        entryPoint: path.resolve('remotion/index.tsx')
-        // webpackOverride: (c) => replaceLoadersWithBabel(c),
+        entryPoint: path.resolve('remotion/index.tsx'),
+        webpackOverride: (config) => {
+          config.cache = false;
+          return config;
+        },
       });
     const comps = await getCompositions(bundleLoc, {
         inputProps: { caption: caption, voiceUrl: voiceUrl },
