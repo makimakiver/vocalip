@@ -26,7 +26,11 @@ const nextConfig: NextConfig = {
         '@remotion/babel-loader',
       ];
     }
-  
+    
+    // 3) Disable caching entirely in production serverless environments
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+      config.cache = false;
+    }
     return config;
   }
 };
