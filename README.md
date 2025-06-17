@@ -26,10 +26,12 @@ Recent technology enables us to bring anime characters to life, and these charac
 
 ## **💡 Solution**
 
-As far as I know, there isn’t currently a system that lets users register their voice as an IP asset on story protocol. I’d like to use this buildathon as an opportunity to create an application where dozens of voice actors can register their voices as IP assets on Story. In this model, any AI-generated voice-over content is treated as a derivative work of the original voice. When creators use these cloned voices to generate revenue, a share of the profits will be attributed back to the original voice actor via the PIL terms in the Story SDK. At this stage, I recognize there are lacks in my project plan, so I’ll be refining these ideas later.
-To further ensure trust and authenticity, we are also integrating Story Protocol’s dispute resolution functionality. If anyone believes a registered voice is not original or has been misused, they can easily raise a dispute on-chain through the platform. This process guarantees that only legitimate voice assets remain listed and voice actors are protected against impersonation or fraud.
-
-> *Summary: I will solve the issue by enabling voice actors to register their voice as an IP asset on story protocol. Our service is the extension of the concept…*
+As far as we know, there isn’t currently a system that lets users register their voice as an IP asset on story protocol. 
+-We’d like to use this buildathon as an opportunity to create an application where dozens of voice actors can register their voices as IP assets on Story. 
+-In this model, any AI-generated voice-over content is treated as a derivative work of the original voice. When creators use these cloned voices to generate revenue, a share of the profits will be attributed back to the original voice actor via the PIL terms in the Story SDK. 
+-To further ensure trust and authenticity, we are also integrating Story Protocol’s dispute resolution functionality. If anyone believes a registered voice is not original or has been misused, they can easily raise a dispute on-chain through the platform. This process guarantees that only legitimate voice assets remain listed and voice actors are protected against impersonation or fraud.
+-At this stage, we recognize there are lacks in our project plan, so we’ll be refining these ideas later.
+> *Summary: We solve the issue by enabling voice actors to register their voice as an IP asset on story protocol. 
 
 ## **💻 How to run?**
 
