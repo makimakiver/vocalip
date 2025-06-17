@@ -9,6 +9,7 @@ Key Features:
 - Smart Contract Integration with Story Protocol
 - AI Voice Cloning Implementation
 - Dispute Resolution for Voice Authenticity
+- AI-Powered video creation supporting tool 
 
 ## 🔍 Problems
 
