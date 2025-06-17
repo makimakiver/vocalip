@@ -43,6 +43,8 @@ As far as we know, there isn’t currently a system that lets users register the
 - **AI Voice Cloning:** Eleven Labs API
 - **Smart Contracts:** Solidity
 
+## Project Architecture 
+[Find here](https://link.excalidraw.com/l/4NzefGCZCYr/45KENb8jWIa)
 ## **💻 How to run?**
 
 Fist you will need to create `.env` file and configure the following in the file
