@@ -33,6 +33,15 @@ As far as we know, there isn’t currently a system that lets users register the
 - At this stage, we recognize there are lacks in our project plan, so we’ll be refining these ideas later.
 > *Summary: We solve the issue by enabling voice actors to register their voice as an IP asset on story protocol. 
 
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js
+- **Styling:** Tailwind CSS
+- **Wallet & Blockchain Integration:** Tomo SDK
+- **IP Asset Management:** Story SDK
+- **AI Voice Cloning:** Eleven Labs API
+- **Smart Contracts:** Solidity
+
 ## **💻 How to run?**
 
 Fist you will need to create `.env` file and configure the following in the file
