@@ -1,6 +1,5 @@
 "use server";
 import { NextRequest, NextResponse } from "next/server";
-import FormData from "form-data";
 import { createHash } from "crypto";
 import { client } from "../../../../utils/config";
 import { uploadJSONToIPFS } from "../../../../utils/functions/uploadToIpfs";
@@ -22,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     console.log("Starting Shotstack video generation...");
 
-    //Create video with Shotstack
+    // Create video with Shotstack
     const shotstackResponse = await fetch(
       "https://api.shotstack.io/stage/render",
       {
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
                       src: voiceUrl,
                     },
                     start: 0,
-                    length: null, // Auto-detect length
+                    length: "auto", // Auto-detect length - must be "auto" not null
                   },
                 ],
               },
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
                     style: "blockbuster",
                     color: "#ffffff",
                     size: "x-large",
-                    background: "transparent",
+                    background: "#00000000", // Transparent background (black with 0 alpha)
                     position: "center",
                   },
                   start: word.start,
@@ -154,12 +153,21 @@ export async function POST(request: NextRequest) {
 
     console.log("Video downloaded, size:", videoBuffer.length);
 
-    // Upload to Pinata
-    const form_data = new FormData();
-    form_data.append("file", videoBuffer, {
-      filename: "video.mp4",
-      contentType: "video/mp4",
-    });
+    // Upload to Pinata - FIXED VERSION
+    const formData = new FormData();
+
+    // Create a Blob from the buffer
+    const blob = new Blob([videoBuffer], { type: "video/mp4" });
+
+    // Append the blob as a file
+    formData.append("file", blob, "video.mp4");
+
+    // Add Pinata metadata
+    formData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+    formData.append(
+      "pinataMetadata",
+      JSON.stringify({ name: "Generated Video" })
+    );
 
     const pinataResponse = await fetch(
       "https://api.pinata.cloud/pinning/pinFileToIPFS",
@@ -167,9 +175,9 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.PINATA_JWT}`,
-          ...form_data.getHeaders(),
+          // Don't set Content-Type header - let fetch set it with boundary
         },
-        body: form_data as any,
+        body: formData,
       }
     );
 
@@ -217,7 +225,7 @@ export async function POST(request: NextRequest) {
       .update(JSON.stringify(nftMetadata))
       .digest("hex");
 
-    //  Register as derivative on Story Protocol
+    // Register as derivative on Story Protocol
     console.log("Registering on Story Protocol...");
     const childIp = await client.ipAsset.mintAndRegisterIpAndMakeDerivative({
       spgNftContract: SPGNFTContractAddress,

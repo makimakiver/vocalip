@@ -129,6 +129,9 @@ function VideoPage() {
     try {
       const response = await fetch("/api/video_upload", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           caption,
           voiceUrl,
@@ -140,13 +143,38 @@ function VideoPage() {
           description: videoDescription,
         }),
       });
+
+      // Check if the response is ok
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Video upload error:", error);
+        setMessage(
+          `❌ Export failed: ${error.details || error.error || "Unknown error"}`
+        );
+        return;
+      }
+
       const video_data = await response.json();
+
+      // Check if we actually got an ipId
+      if (!video_data.ipId) {
+        console.error("No ipId returned from video upload:", video_data);
+        setMessage("❌ Export failed: No IP ID returned");
+        return;
+      }
+
+      console.log("Video registered successfully:", video_data);
       setMessage("✅ Video exported successfully!");
       setVideoRegistered(
         `https://aeneid.explorer.story.foundation/ipa/${video_data.ipId}`
       );
     } catch (err) {
-      setMessage("❌ Export failed.");
+      console.error("Export error:", err);
+      setMessage(
+        `❌ Export failed: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsExporting(false);
     }
