@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     } = await request.json();
 
     console.log("Starting Shotstack video generation...");
-
+    console.log(caption);
     // Create video with Shotstack
     const shotstackResponse = await fetch(
       "https://api.shotstack.io/stage/render",
@@ -60,12 +60,7 @@ export async function POST(request: NextRequest) {
                     position: "center",
                   },
                   start: word.start,
-                  length: Math.max(0.1, word.end - word.start), // Minimum 0.1s length
-                  transition: {
-                    in: "fade",
-                    out: "fade",
-                  },
-                  effect: "zoomIn",
+                  length: Math.max(0.1, word.end - word.start) // Minimum 0.1s length
                 })),
               },
             ],
