@@ -727,6 +727,43 @@ export default function VoiceRecorder() {
           ))}
         </motion.div>
 
+        {/* Important Note */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          style={{
+            backgroundColor: "rgba(255, 255, 255, 0.08)",
+            backdropFilter: "blur(10px)",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "32px",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            maxWidth: "900px",
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "12px",
+              color: "#fff",
+              fontWeight: "600",
+              fontSize: "1rem",
+            }}
+          >
+            <Sparkles size={20} color="#fbbf24" />
+            <span>
+              Pro Tip: The longer your recording, the more accurate your voice
+              clone will be. We recommend at least 3 minutes of clear speech for
+              the best results!
+            </span>
+          </div>
+        </motion.div>
+
         {/* Model Selection */}
         {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
