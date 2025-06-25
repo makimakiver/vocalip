@@ -607,8 +607,8 @@ function VideoPage() {
               <Player
                 component={RemotionVideo}
                 durationInFrames={durationFrames}
-                compositionWidth={300}
-                compositionHeight={450}
+                compositionWidth={400}
+                compositionHeight={600}
                 fps={30}
                 inputProps={{ caption, voiceUrl }}
                 controls
@@ -625,8 +625,8 @@ function VideoPage() {
                 ease: "easeInOut",
               }}
               style={{
-                width: "300px",
-                height: "450px",
+                width: "400px",
+                height: "600px",
                 backgroundColor: "rgba(255, 255, 255, 0.05)",
                 borderRadius: "20px",
                 display: "flex",
