@@ -60,7 +60,12 @@ export async function POST(request: NextRequest) {
                     position: "center",
                   },
                   start: word.start,
-                  length: Math.max(0.1, word.end - word.start) // Minimum 0.1s length
+                  length: Math.max(0.1, word.end - word.start), // Minimum 0.1s length
+                //   transition: {
+                //     in: "fade",
+                //     out: "fade",
+                //   },
+                //   effect: "zoomIn",
                 })),
               },
             ],
