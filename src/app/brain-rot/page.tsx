@@ -23,6 +23,7 @@ import {
   Pause,
   SquareArrowOutUpRight,
   Download,
+  Loader2,
 } from "lucide-react";
 
 interface single_word_recording {
@@ -210,135 +211,6 @@ function VideoPage() {
       setIsDownloading(false);
     }
   };
-
-  //   // Simple voice list item component
-  //   const VoiceListItem = ({ assetId, creator, index, onSelect }: any) => {
-  //     const [title, setTitle] = useState<string>("Loading...");
-  //     const [mediaUrl, setMediaUrl] = useState<string>("");
-  //     const [isPlaying, setIsPlaying] = useState(false);
-  //     const audioRef = useRef<HTMLAudioElement>(null);
-
-  //     useEffect(() => {
-  //       const fetchVoiceData = async () => {
-  //         try {
-  //           const options = {
-  //             method: "GET",
-  //             headers: {
-  //               "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
-  //               "X-Chain": "story-aeneid",
-  //             },
-  //           };
-
-  //           const metaRes = await fetch(
-  //             `https://api.storyapis.com/api/v3/assets/${assetId}/metadata`,
-  //             options
-  //           );
-  //           const metaJson = await metaRes.json();
-
-  //           if (metaJson.metadataUri) {
-  //             const metaDetail = await fetch(metaJson.metadataUri);
-  //             const meta = await metaDetail.json();
-  //             setTitle(meta.title || `Voice ${index + 1}`);
-  //             setMediaUrl(meta.mediaUrl || "");
-  //           }
-  //         } catch (err) {
-  //           setTitle(`Voice ${index + 1}`);
-  //         }
-  //       };
-
-  //       fetchVoiceData();
-  //     }, [assetId, index]);
-
-  //     const handlePlayPause = (e: React.MouseEvent) => {
-  //       e.stopPropagation();
-  //       if (audioRef.current) {
-  //         if (isPlaying) {
-  //           audioRef.current.pause();
-  //         } else {
-  //           audioRef.current.play();
-  //         }
-  //         setIsPlaying(!isPlaying);
-  //       }
-  //     };
-
-  //     return (
-  //       <div
-  //         style={{
-  //           backgroundColor: "rgba(255, 255, 255, 0.05)",
-  //           borderRadius: "8px",
-  //           padding: "1rem",
-  //           cursor: "pointer",
-  //           transition: "background-color 0.2s",
-  //           border: "1px solid rgba(255, 255, 255, 0.1)",
-  //         }}
-  //         onMouseEnter={(e) => {
-  //           e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-  //         }}
-  //         onMouseLeave={(e) => {
-  //           e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
-  //         }}
-  //         onClick={onSelect}
-  //       >
-  //         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-  //           <button
-  //             onClick={handlePlayPause}
-  //             style={{
-  //               width: "50px",
-  //               height: "50px",
-  //               borderRadius: "8px",
-  //               backgroundColor: isPlaying
-  //                 ? "rgba(239, 68, 68, 0.2)"
-  //                 : "rgba(251, 191, 36, 0.2)",
-  //               display: "flex",
-  //               alignItems: "center",
-  //               justifyContent: "center",
-  //               flexShrink: 0,
-  //               border: "none",
-  //               cursor: "pointer",
-  //               transition: "all 0.2s",
-  //             }}
-  //           >
-  //             {isPlaying ? (
-  //               <Pause size={24} color={isPlaying ? "#ef4444" : "#fbbf24"} />
-  //             ) : (
-  //               <Play size={24} color="#fbbf24" />
-  //             )}
-  //           </button>
-
-  //           <div style={{ flex: 1 }}>
-  //             <h3
-  //               style={{
-  //                 color: "#fff",
-  //                 fontSize: "1rem",
-  //                 fontWeight: "500",
-  //                 margin: "0 0 0.25rem 0",
-  //               }}
-  //             >
-  //               {title}
-  //             </h3>
-  //             <p
-  //               style={{
-  //                 color: "rgba(255, 255, 255, 0.6)",
-  //                 fontSize: "0.875rem",
-  //                 margin: 0,
-  //               }}
-  //             >
-  //               {assetId.slice(0, 8)}...{assetId.slice(-6)}
-  //             </p>
-  //           </div>
-
-  //           <ChevronRight size={20} color="rgba(255, 255, 255, 0.4)" />
-  //         </div>
-
-  //         <audio
-  //           ref={audioRef}
-  //           src={mediaUrl}
-  //           onEnded={() => setIsPlaying(false)}
-  //           style={{ display: "none" }}
-  //         />
-  //       </div>
-  //     );
-  //   };
 
   return (
     <div
@@ -780,6 +652,225 @@ function VideoPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Loading Overlay for Video Generation */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            key="loading-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+          >
+            <motion.div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "24px",
+                padding: "40px",
+                backgroundColor: "rgba(30, 27, 75, 0.9)",
+                borderRadius: "24px",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+              }}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              {/* Animated spinner */}
+              <motion.div
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  border: "4px solid rgba(255, 255, 255, 0.1)",
+                  borderTopColor: "#fbbf24",
+                  borderRightColor: "#f59e0b",
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+
+              <motion.h3
+                style={{
+                  color: "white",
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
+                  textAlign: "center",
+                  margin: 0,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                Generating Your Video
+              </motion.h3>
+
+              <motion.p
+                style={{
+                  color: "rgba(255, 255, 255, 0.7)",
+                  fontSize: "1rem",
+                  textAlign: "center",
+                  maxWidth: "300px",
+                  margin: 0,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                Processing voice synthesis and creating caption timing...
+              </motion.p>
+
+              {/* Progress dots */}
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      backgroundColor: "#fbbf24",
+                    }}
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                    }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Loading Overlay for Video Export */}
+      <AnimatePresence>
+        {isExporting && (
+          <motion.div
+            key="export-loading-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+          >
+            <motion.div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "24px",
+                padding: "40px",
+                backgroundColor: "rgba(30, 27, 75, 0.9)",
+                borderRadius: "24px",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+              }}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              {/* Animated spinner */}
+              <motion.div
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  border: "4px solid rgba(255, 255, 255, 0.1)",
+                  borderTopColor: "#10b981",
+                  borderRightColor: "#059669",
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+
+              <motion.h3
+                style={{
+                  color: "white",
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
+                  textAlign: "center",
+                  margin: 0,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                Exporting Your Video
+              </motion.h3>
+
+              <motion.p
+                style={{
+                  color: "rgba(255, 255, 255, 0.7)",
+                  fontSize: "1rem",
+                  textAlign: "center",
+                  maxWidth: "350px",
+                  margin: 0,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                Creating video file, uploading to IPFS, and registering on Story
+                Protocol. This may take a moment...
+              </motion.p>
+
+              {/* Progress dots */}
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      backgroundColor: "#10b981",
+                    }}
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                    }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 3) AnimatePresence Voice-Model Modal */}
       <AnimatePresence>

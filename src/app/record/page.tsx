@@ -20,9 +20,8 @@ import {
   Headphones,
   ChevronRight,
   Sparkles,
+  Loader2,
 } from "lucide-react";
-// import * as Select from '@radix-ui/react-select'
-// import SelectDemo from '../components/Select'
 
 export default function VoiceRecorder() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -52,6 +51,7 @@ export default function VoiceRecorder() {
   const [recordingError, setRecordingError] = useState<string>("");
   const isRecordingRef = useRef(false); // Add ref to track recording state
   const waveformDataRef = useRef<number[]>([]); // Store waveform history
+  const [isUploading, setIsUploading] = useState(false);
 
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60)
@@ -410,6 +410,7 @@ export default function VoiceRecorder() {
   const handleNext = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setRecordingError(""); // Clear any previous errors
+    setIsUploading(true);
     const file = onFiles[0];
     console.log("File", file);
     if (file) {
@@ -437,6 +438,8 @@ export default function VoiceRecorder() {
         );
         setPassed(false);
         setShowModal(true);
+      } finally {
+        setIsUploading(false);
       }
     } else {
       setRecordingError(
@@ -444,6 +447,7 @@ export default function VoiceRecorder() {
       );
       setPassed(false);
       setShowModal(true);
+      setIsUploading(false);
     }
     setOnFiles([]);
   };
@@ -490,6 +494,7 @@ export default function VoiceRecorder() {
     }
     if (!recorderRef.current) return;
     console.log("Stopping recording");
+    setIsUploading(true);
     // stop & wait for final dataavailable
     recorderRef.current.onstop = async () => {
       // 3) build a single Blob
@@ -520,6 +525,8 @@ export default function VoiceRecorder() {
         );
         setPassed(false);
         setShowModal(true);
+      } finally {
+        setIsUploading(false);
       }
 
       setRecording(false);
@@ -591,6 +598,34 @@ export default function VoiceRecorder() {
               repeat: Infinity,
               repeatType: "reverse",
               ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Floating particles */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={`particle-${i}`}
+            style={{
+              position: "absolute",
+              width: "3px",
+              height: "3px",
+              borderRadius: "50%",
+              backgroundColor: "rgba(255, 255, 255, 0.5)",
+              left: `${(i * 6.67) % 100}%`,
+              top: `${(i * 5) % 100}%`,
+            }}
+            animate={{
+              y: [-20, -100],
+              opacity: [0, 1, 0],
+            }}
+            transition={{
+              duration: 3 + (i % 3),
+              repeat: Infinity,
+              delay: i * 0.3,
+              ease: "easeOut",
             }}
           />
         ))}
@@ -763,24 +798,6 @@ export default function VoiceRecorder() {
             </span>
           </div>
         </motion.div>
-
-        {/* Model Selection */}
-        {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          style={{
-            marginBottom: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-          }}
-        >
-          <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500' }}>
-            AI Model:
-          </span>
-          <SelectDemo />
-        </motion.div> */}
 
         {/* Main Recording/Upload Area */}
         <motion.div
@@ -1333,33 +1350,158 @@ export default function VoiceRecorder() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleNext}
-            disabled={onFiles.length === 0}
+            disabled={onFiles.length === 0 || isUploading}
             style={{
               marginTop: "40px",
               padding: "16px 48px",
               backgroundImage:
-                onFiles.length > 0
+                onFiles.length > 0 && !isUploading
                   ? "linear-gradient(135deg, #fbbf24, #f59e0b)"
                   : "none",
               backgroundColor:
-                onFiles.length > 0 ? "transparent" : "rgba(255, 255, 255, 0.1)",
-              color: onFiles.length > 0 ? "#fff" : "rgba(255, 255, 255, 0.3)",
+                onFiles.length > 0 && !isUploading
+                  ? "transparent"
+                  : "rgba(255, 255, 255, 0.1)",
+              color:
+                onFiles.length > 0 && !isUploading
+                  ? "#fff"
+                  : "rgba(255, 255, 255, 0.3)",
               borderRadius: "50px",
               fontWeight: "600",
               fontSize: "1.125rem",
               border: "none",
-              cursor: onFiles.length > 0 ? "pointer" : "not-allowed",
+              cursor:
+                onFiles.length > 0 && !isUploading ? "pointer" : "not-allowed",
               boxShadow:
-                onFiles.length > 0
+                onFiles.length > 0 && !isUploading
                   ? "0 8px 24px rgba(251, 191, 36, 0.4)"
                   : "none",
               transition: "all 0.3s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "12px",
             }}
           >
-            Continue →
+            {isUploading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              "Continue →"
+            )}
           </motion.button>
         )}
       </div>
+
+      {/* Upload Loading Overlay */}
+      <AnimatePresence>
+        {isUploading && (
+          <motion.div
+            key="upload-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+          >
+            <motion.div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "24px",
+                padding: "40px",
+                backgroundColor: "rgba(30, 27, 75, 0.9)",
+                borderRadius: "24px",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+              }}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              {/* Animated spinner */}
+              <motion.div
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  border: "4px solid rgba(255, 255, 255, 0.1)",
+                  borderTopColor: "#fbbf24",
+                  borderRightColor: "#f59e0b",
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+
+              <motion.h3
+                style={{
+                  color: "white",
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
+                  textAlign: "center",
+                  margin: 0,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                Processing Your Voice
+              </motion.h3>
+
+              <motion.p
+                style={{
+                  color: "rgba(255, 255, 255, 0.7)",
+                  fontSize: "1rem",
+                  textAlign: "center",
+                  maxWidth: "300px",
+                  margin: 0,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                Uploading to IPFS and preparing for voice cloning...
+              </motion.p>
+
+              {/* Progress dots */}
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      backgroundColor: "#fbbf24",
+                    }}
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                    }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Updated Modal - No more individual/company selection */}
       <AnimatePresence>
