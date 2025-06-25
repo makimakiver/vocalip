@@ -22,6 +22,7 @@ import {
   Play,
   Pause,
   SquareArrowOutUpRight,
+  Download,
 } from "lucide-react";
 
 interface single_word_recording {
@@ -49,6 +50,8 @@ function VideoPage() {
   const [voices, setVoices] = useState<any[]>([]);
   const [loadingVideoRegistered, setLoadingVideoRegistered] =
     useState<boolean>(false);
+  const [videoDownloadUrl, setVideoDownloadUrl] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const contractAddress = "0x1065d627CF25c0380e8fF33F4c5b23C4826d6D17";
   const STORY_RPC_URL = "https://aeneid.storyrpc.io";
   const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL);
@@ -168,6 +171,7 @@ function VideoPage() {
       setVideoRegistered(
         `https://aeneid.explorer.story.foundation/ipa/${video_data.ipId}`
       );
+      setVideoDownloadUrl(video_data.link);
     } catch (err) {
       console.error("Export error:", err);
       setMessage(
@@ -177,6 +181,33 @@ function VideoPage() {
       );
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const downloadVideo = async () => {
+    if (!videoDownloadUrl) return;
+
+    setIsDownloading(true);
+    try {
+      const response = await fetch(videoDownloadUrl);
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = `${videoTitle || "video"}.mp4`;
+
+      document.body.appendChild(a);
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download video");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -570,40 +601,79 @@ function VideoPage() {
           )}
 
           {caption.length > 0 && (
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setConfigurationModal(true)}
-              disabled={isExporting}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "1rem 2rem",
-                borderRadius: "50px",
-                backgroundImage: isExporting
-                  ? "none"
-                  : "linear-gradient(135deg, #10b981, #059669)",
-                backgroundColor: isExporting
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "transparent",
-                color: "#fff",
-                border: "none",
-                cursor: isExporting ? "not-allowed" : "pointer",
-                fontSize: "1.125rem",
-                fontWeight: 600,
-                marginBottom: "1rem",
-                boxShadow: isExporting
-                  ? "none"
-                  : "0 8px 24px rgba(16, 185, 129, 0.4)",
-                transition: "all 0.3s ease",
-              }}
-            >
-              <Upload size={24} />
-              {isExporting ? "Exporting..." : "Export Video"}
-            </motion.button>
+            <>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setConfigurationModal(true)}
+                disabled={isExporting}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "1rem 2rem",
+                  borderRadius: "50px",
+                  backgroundImage: isExporting
+                    ? "none"
+                    : "linear-gradient(135deg, #10b981, #059669)",
+                  backgroundColor: isExporting
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "transparent",
+                  color: "#fff",
+                  border: "none",
+                  cursor: isExporting ? "not-allowed" : "pointer",
+                  fontSize: "1.125rem",
+                  fontWeight: 600,
+                  marginBottom: "1rem",
+                  boxShadow: isExporting
+                    ? "none"
+                    : "0 8px 24px rgba(16, 185, 129, 0.4)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <Upload size={24} />
+                {isExporting ? "Exporting..." : "Export Video"}
+              </motion.button>
+
+              {videoDownloadUrl && (
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={downloadVideo}
+                  disabled={isDownloading}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "1rem 2rem",
+                    borderRadius: "50px",
+                    backgroundImage: isDownloading
+                      ? "none"
+                      : "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                    backgroundColor: isDownloading
+                      ? "rgba(255, 255, 255, 0.1)"
+                      : "transparent",
+                    color: "#fff",
+                    border: "none",
+                    cursor: isDownloading ? "not-allowed" : "pointer",
+                    fontSize: "1.125rem",
+                    fontWeight: 600,
+                    marginBottom: "1rem",
+                    boxShadow: isDownloading
+                      ? "none"
+                      : "0 8px 24px rgba(139, 92, 246, 0.4)",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  <Download size={24} />
+                  {isDownloading ? "Downloading..." : "Download Video"}
+                </motion.button>
+              )}
+            </>
           )}
 
           {message && (
@@ -1215,33 +1285,78 @@ function VideoPage() {
                 Your video has been successfully registered on Story Protocol
               </p>
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => window.open(videoRegistered, "_blank")}
+              <div
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "10px",
-                  width: "100%",
-                  padding: "1rem",
-                  backgroundImage: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                  borderRadius: "16px",
-                  border: "none",
-                  color: "#fff",
-                  fontSize: "1.125rem",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
-                  transition: "all 0.3s ease",
-                  position: "relative",
-                  zIndex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1rem",
                 }}
               >
-                View on Explorer
-                <SquareArrowOutUpRight size={20} />
-              </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => window.open(videoRegistered, "_blank")}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "10px",
+                    width: "100%",
+                    padding: "1rem",
+                    backgroundImage:
+                      "linear-gradient(135deg, #3b82f6, #2563eb)",
+                    borderRadius: "16px",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: "1.125rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+                    transition: "all 0.3s ease",
+                    position: "relative",
+                    zIndex: 1,
+                  }}
+                >
+                  View on Explorer
+                  <SquareArrowOutUpRight size={20} />
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={downloadVideo}
+                  disabled={isDownloading}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "10px",
+                    width: "100%",
+                    padding: "1rem",
+                    backgroundImage: isDownloading
+                      ? "none"
+                      : "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                    backgroundColor: isDownloading
+                      ? "rgba(255, 255, 255, 0.1)"
+                      : "transparent",
+                    borderRadius: "16px",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: "1.125rem",
+                    fontWeight: "600",
+                    cursor: isDownloading ? "not-allowed" : "pointer",
+                    boxShadow: isDownloading
+                      ? "none"
+                      : "0 8px 24px rgba(139, 92, 246, 0.4)",
+                    transition: "all 0.3s ease",
+                    position: "relative",
+                    zIndex: 1,
+                  }}
+                >
+                  <Download size={20} />
+                  {isDownloading ? "Downloading..." : "Download Video"}
+                </motion.button>
+              </div>
 
               <motion.button
                 whileHover={{ scale: 1.1 }}
