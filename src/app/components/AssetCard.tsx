@@ -132,7 +132,7 @@ export default function AssetCard({
         throw new Error("Minting fee is null");
       }
       if (rawMintingFee == 0) {
-        setButtonText("Buy licence for Free!!");
+        setButtonText("Use License for Free"); // Changed from "Buy licence for Free!!"
       } else {
         const mintingFee = BigInt(rawMintingFee) / 1000000000000000000n;
         setButtonText("Buy licence for " + mintingFee + " IP");
