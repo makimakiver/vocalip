@@ -53,7 +53,7 @@ function VideoPage() {
     useState<boolean>(false);
   const [videoDownloadUrl, setVideoDownloadUrl] = useState<string>("");
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
-  const contractAddress = "0x1065d627CF25c0380e8fF33F4c5b23C4826d6D17";
+  const contractAddress = "0xc3b30F14989bFF8DF4A6F4ADd1b0f887BDaF3771";
   const STORY_RPC_URL = "https://aeneid.storyrpc.io";
   const readProvider = new ethers.JsonRpcProvider(STORY_RPC_URL);
   const storyContract = new ethers.Contract(
